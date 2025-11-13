@@ -1,4 +1,7 @@
 Version 1.3.5.5.101 (13/11/2025)
+- affichage compta
+
+Version 1.3.5.5.101 (13/11/2025)
 - beug reglement
 
 Version 1.3.5.5.100 (12/11/2025)

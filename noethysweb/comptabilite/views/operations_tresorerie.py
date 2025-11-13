@@ -339,14 +339,43 @@ class Liste(Page, crud.Liste):
 
         # Stats du compte
         stats = CompteBancaire.objects.filter(pk=self.Get_categorie()).aggregate(
-            solde_final=Sum(Case(When(comptaoperation__type="credit", then=F("comptaoperation__montant")), output_field=DecimalField(), default=0)) - Sum(Case(When(comptaoperation__type="debit", then=F("comptaoperation__montant")), output_field=DecimalField(), default=0)),
-            solde_pointe=Sum(Case(When(comptaoperation__type="credit", comptaoperation__releve__isnull=False, then=F("comptaoperation__montant")), output_field=DecimalField(), default=0)) - Sum(Case(When(comptaoperation__type="debit", comptaoperation__releve__isnull=False, then=F("comptaoperation__montant")), output_field=DecimalField(), default=0)),
-            solde_jour=Sum(Case(When(comptaoperation__type="credit", comptaoperation__date__lte=datetime.date.today(), then=F("comptaoperation__montant")), output_field=DecimalField(), default=0)) - Sum(Case(When(comptaoperation__type="debit", comptaoperation__date__lte=datetime.date.today(), then=F("comptaoperation__montant")), output_field=DecimalField(), default=0)),
+            total_debit=Sum(Case(
+                When(comptaoperation__type="debit", then=F("comptaoperation__montant")),
+                output_field=DecimalField(),
+                default=0
+            )),
+            total_credit=Sum(Case(
+                When(comptaoperation__type="credit", then=F("comptaoperation__montant")),
+                output_field=DecimalField(),
+                default=0
+            )),
+            solde_final=Sum(Case(
+                When(comptaoperation__type="credit", then=F("comptaoperation__montant")),
+                output_field=DecimalField(),
+                default=0
+            )) - Sum(Case(
+                When(comptaoperation__type="debit", then=F("comptaoperation__montant")),
+                output_field=DecimalField(),
+                default=0
+            )),
         )
 
-        context['box_conclusion'] = "<center> Solde : <b>%s</b></center>" % (
-            utils_texte.Formate_montant(stats["solde_final"])
-        )
+        total_debit = stats["total_debit"] or 0
+        total_credit = stats["total_credit"] or 0
+        solde_final = stats["solde_final"] or 0
+
+        context['box_conclusion'] = f"""
+            <center>
+                <table style="font-weight:bold;">
+                    <tr><td>Solde du compte :</td><td style='padding-left:10px;'>{utils_texte.Formate_montant(solde_final)}</td></tr>
+                </table>
+                <br>
+                <table style="font-weight;">
+                    <tr><td>Somme des débits :</td><td style='padding-left:10px;'>{utils_texte.Formate_montant(total_debit)}</td></tr>
+                    <tr><td>Somme des crédits :</td><td style='padding-left:10px;'>{utils_texte.Formate_montant(total_credit)}</td></tr>
+                </table>
+            </center>
+        """
         return context
 
     class datatable_class(MyDatatable):
