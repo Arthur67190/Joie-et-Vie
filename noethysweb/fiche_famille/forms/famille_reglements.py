@@ -123,7 +123,6 @@ class Formulaire(FormulaireBase, ModelForm):
                      Field('payeur'),
                      Field('observations'),
                      Field('modelimp'),
-                Field('compte'),
             ),
 
         )
