@@ -195,8 +195,8 @@ class Page(crud.Page):
 
         if context['liste_categories']:
             context['boutons_liste'] = [
-                {"label": "Ajouter une dépense", "classe": "btn btn-success", "href": reverse_lazy(self.url_ajouter_debit, kwargs={'categorie': self.Get_categorie()}), "icone": "fa fa-plus"},
-                {"label": "Ajouter une recette", "classe": "btn btn-default", "href": reverse_lazy(self.url_ajouter_credit, kwargs={'categorie': self.Get_categorie()}), "icone": "fa fa-plus"},
+                {"label": "Ajouter une dépense", "classe": "btn btn-primary", "href": reverse_lazy(self.url_ajouter_debit, kwargs={'categorie': self.Get_categorie()}), "icone": "fa fa-plus"},
+                {"label": "Ajouter une recette", "classe": "btn btn-primary", "href": reverse_lazy(self.url_ajouter_credit, kwargs={'categorie': self.Get_categorie()}), "icone": "fa fa-plus"},
                 {"label": "Ajouter un virement interne", "classe": "btn btn-default", "href": reverse_lazy("virements_ajouter"), "icone": "fa fa-plus"}, ]
         else:
             context['box_introduction'] = "Vous pouvez saisir ici des opérations de trésorerie.<br><b>Vous devez avoir enregistré au moins un compte bancaire avant de pouvoir ajouter des opérations !</b>"

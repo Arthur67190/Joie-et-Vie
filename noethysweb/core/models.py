@@ -502,8 +502,8 @@ class CompteBancaire(models.Model):
     def __str__(self):
         structure_name = "Sans structure"
         if self.structure:
-            structure_name = self.structure.name
-        return f"{self.nom} {structure_name}"
+            structure_name = self.structure.nom
+        return f"{self.nom} ({structure_name})"
 
     def delete(self, *args, **kwargs):
         # Supprime l'objet
@@ -3574,11 +3574,11 @@ class Article(models.Model):
     statut = models.CharField(verbose_name="Statut", max_length=100, choices=choix_statut, default="publie", help_text="Sélectionnez Non publié pour interrompre la publication quelque soit la date de fin de publication prévue.")
     document = models.FileField(verbose_name="Document", upload_to=get_uuid_path, blank=True, null=True, help_text="Privilégiez un document au format PDF.")
     document_titre = models.CharField(verbose_name="Titre", max_length=300, default="Document", help_text="Saisissez un nom de document.")
-    structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=True, null=True)
+    structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=False, null=False)
     choix_public = [("toutes", "Toutes les familles"),
                     ("inscrits", "Les familles dont un membre est inscrit à l'une des activités suivantes"),
                    #("presents", "Les familles dont un membre est présent sur l'une des activités suivantes et sur la période suivante"),
-                    ("presents_groupes", "Les familles dont un membre est présent sur l'un des groupes suivants et sur la période suivante"),
+                   #("presents_groupes", "Les familles dont un membre est présent sur l'un des groupes suivants et sur la période suivante"),
                     ]
     public = models.CharField(verbose_name="Public", max_length=100, choices=choix_public, help_text="Sélectionnez le public qui pourra consulter cet article.")
     activites = models.ManyToManyField(Activite, verbose_name="Activités", related_name="article_activites", blank=True, help_text="Sélectionnez une ou plusieurs activités dans la liste.")
@@ -4068,7 +4068,7 @@ class ComptaBudget(models.Model):
     date_debut = models.DateField(verbose_name="Date de début")
     date_fin = models.DateField(verbose_name="Date de fin")
     structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=True, null=True)
-    compte = models.ManyToManyField(CompteBancaire, verbose_name="Compte bancaire")
+    compte = models.ManyToManyField(CompteBancaire, verbose_name="Compte bancaire"   )
 
     class Meta:
         db_table = "compta_budgets"

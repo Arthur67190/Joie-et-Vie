@@ -13,18 +13,16 @@ class FormulaireBase():
         self.mode = kwargs.pop("mode", None)
         super(FormulaireBase, self).__init__(*args, **kwargs)
 
-        # Définit les caractéristiques du champ de la structure associée
-        if self.request and "structure" in self.fields:
-            # Affiche uniquement les structures associées à l'utilisateur
-            self.fields["structure"].queryset = self.request.user.structures.all().order_by("nom")
-            if not self.fields["structure"].required:
-                self.fields["structure"].empty_label = "Toutes les structures"
-
-            # self.fields["structure"].empty_label = "Toutes les structures"
-            # self.fields["structure"].queryset = Structure.objects.filter(pk=self.request.user.structure_actuelle_id)
-            # # Si création, sélectionne la structure actuelle de l'utilisateur en cours
-            # if not self.instance.pk:
-            #     self.fields["structure"].initial = self.request.user.structure_actuelle_id
+        if self.request:
+            champ = self.fields.get("structure")
+            if champ:
+                if self.request.user.is_superuser:
+                    champ.required = False
+                    champ.queryset = Structure.objects.order_by("nom")
+                    champ.empty_label = "Toutes les structures"
+                else:
+                    champ.required = True  # ici tu rends le champ obligatoire
+                    champ.queryset = self.request.user.structures.filter(visible=True).order_by("nom")
 
         # Envoi du request dans le widget activites pour effectuer un filtre sur les structures accessibles
         if self.request and "activites" in self.fields:

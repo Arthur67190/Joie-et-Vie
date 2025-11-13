@@ -29,7 +29,20 @@ class Liste(Page, crud.Liste):
     model = ComptaCategorie
 
     def get_queryset(self):
-        return ComptaCategorie.objects.filter(self.Get_filtres("Q"), self.Get_condition_structure())
+        # Filtre de base
+        qs = ComptaCategorie.objects.filter(self.Get_filtres("Q"))
+
+        # Filtre commun à tous selon la structure
+        condition_structure = self.Get_condition_structure()
+        if condition_structure is not None:
+            qs = qs.filter(condition_structure)
+
+        # Exclusion spécifique aux utilisateurs classiques
+        if not self.request.user.is_superuser:
+            # Supposons que 'structure=None' ou 'structure="all"' signifie toutes les structures
+            qs = qs.exclude(structure__isnull=True)  # ou .exclude(structure="all")
+
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super(Liste, self).get_context_data(**kwargs)

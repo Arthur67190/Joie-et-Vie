@@ -19,7 +19,7 @@ from individus.utils import utils_pieces_manquantes
 
 class Formulaire(FormulaireBase, ModelForm):
     # Type de pièce
-    mode_piece = forms.ChoiceField(label="Type de pièce", choices=[("AFOURNIR", "Une pièce à fournir"), ("TOUTES", "Une pièce prédéfinie"), ("AUTRE", "Autre type de pièce")], initial="AFOURNIR", required=False)
+    mode_piece = forms.ChoiceField(label="Type de pièce", choices=[("AFOURNIR", "Une pièce à fournir"), ("AUTRE", "Autre type de pièce")], initial="AFOURNIR", required=False)
     pieces_fournir = forms.TypedChoiceField(label="Choix de la pièce", choices=[], required=False, help_text="Sélectionnez un type de pièce dans la liste.")
     pieces_toutes = forms.TypedChoiceField(label="Choix de la pièce", choices=[], required=False, help_text="Sélectionnez un type de pièce dans la liste.")
     choix_individu = forms.TypedChoiceField(label="Individu associé", choices=[], required=False, help_text="Sélectionnez le nom de l'individu concerné ou la famille.")

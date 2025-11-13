@@ -46,7 +46,11 @@ class View(CustomView, TemplateView):
         dict_categories = {categorie.pk: categorie for categorie in ComptaCategorie.objects.filter(condition_structure)}
 
         # Importation des ventilations
-        condition = Q(operation__compte__in=comptes)
+        condition = (
+                Q(operation__compte__in=comptes) &
+                Q(operation__date__gte=budget.date_debut) &
+                Q(operation__date__lte=budget.date_fin)
+        )
         ventilations_tresorerie = Counter({ventilation["categorie"]: ventilation["total"] for ventilation in ComptaVentilation.objects.values("categorie").filter(condition).annotate(total=Sum("montant"))})
         dict_realise = {dict_categories[idcategorie]: montant for idcategorie, montant in dict(ventilations_tresorerie).items()}
 

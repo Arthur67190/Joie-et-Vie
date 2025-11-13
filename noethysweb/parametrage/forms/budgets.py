@@ -89,7 +89,7 @@ class Formulaire(FormulaireBase, ModelForm):
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-md-2'
         self.helper.field_class = 'col-md-10'
-
+        self.fields['compte'].required = True
 
         if self.request:
             self.fields["structure"].queryset = Structure.objects.filter(

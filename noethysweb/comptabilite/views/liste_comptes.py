@@ -40,15 +40,12 @@ class Liste(Page, crud.Liste):
 
     class datatable_class(MyDatatable):
         filtres = ["idcompte", "numero", "nom"]
-        solde_final = columns.TextColumn("Solde final", sources="solde_final", processor="Formate_montant")
-        solde_pointe = columns.TextColumn("Solde pointé", sources="solde_pointe", processor="Formate_montant")
-        solde_jour = columns.TextColumn("Solde du jour", sources="solde_jour", processor="Formate_montant")
-        numero = columns.TextColumn("Numéro", sources=None, processor='Get_numero')
+        solde_final = columns.TextColumn("Solde du compte", sources="solde_final", processor="Formate_montant")
         actions = columns.TextColumn("Actions", sources=None, processor='Get_actions_speciales')
 
         class Meta:
             structure_template = MyDatatable.structure_template
-            columns = ["idcompte", "numero", "nom", "solde_jour", "solde_pointe", "solde_final", "actions"]
+            columns = ["idcompte", "nom", "solde_final", "actions"]
             ordering = ["nom"]
 
         def Get_numero(self, instance, **kwargs):

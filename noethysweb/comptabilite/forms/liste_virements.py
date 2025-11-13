@@ -35,12 +35,21 @@ class Formulaire(FormulaireBase, ModelForm):
         self.helper.label_class = 'col-md-2'
         self.helper.field_class = 'col-md-10'
 
-        for champ in ("compte_debit", "compte_credit"):
-            if champ in self.fields:
-                self.fields[champ].queryset = CompteBancaire.objects.all()
-                self.fields[champ].label_from_instance = lambda obj: (
-                    f"{obj.nom} ({obj.structure.nom if obj.structure else 'Aucune structure'})"
-                )
+        # Filtrage des comptes bancaires selon l'utilisateur
+        if self.request:
+            user = self.request.user
+
+            for champ in ("compte_debit", "compte_credit"):
+                if champ in self.fields:
+                    qs = CompteBancaire.objects.all()
+
+                    if not user.is_superuser:
+                        qs = qs.filter(structure__in=user.structures.all())
+
+                    self.fields[champ].queryset = qs.order_by("nom")
+                    self.fields[champ].label_from_instance = (
+                        lambda obj: f"{obj.nom} ({obj.structure.nom if obj.structure else 'Aucune structure'})"
+                    )
 
         # Date
         if not self.instance.pk:
@@ -48,7 +57,7 @@ class Formulaire(FormulaireBase, ModelForm):
 
         # Affichage
         self.helper.layout = Layout(
-            Commandes(annuler_url="{% url 'virements_liste' %}"),
+            Commandes(annuler_url="{% url 'operations_tresorerie_liste' %}"),
             Fieldset("Généralités",
                 Field("date"),
                 Field("compte_debit"),

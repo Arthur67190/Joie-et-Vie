@@ -14,10 +14,12 @@
 {% endblock %}
 
 {% block box_contenu %}
-    {# Boutons de liste #}
-    <div class="btn-group">
+    {# Boutons de liste avec espacement #}
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
         {% for bouton in boutons_liste %}
-            <a class="{{ bouton.classe }}" href="{{ bouton.href }}"><i class="{{ bouton.icone }} margin-r-5"></i> {{ bouton.label }}</a>
+            <a class="{{ bouton.classe }}" href="{{ bouton.href }}">
+                <i class="{{ bouton.icone }} margin-r-5"></i> {{ bouton.label }}
+            </a>
         {% endfor %}
         {# Ajout du bouton de téléchargement #}
         {% if show_download_button %}

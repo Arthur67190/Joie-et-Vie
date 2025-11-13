@@ -45,6 +45,9 @@ class Page(crud.Page):
 
         return super().form_valid(form)
 
+    def get_success_url(self):
+        return reverse_lazy("operations_tresorerie_liste")
+
 
 class Liste(Page, crud.Liste):
     model = ComptaVirement
