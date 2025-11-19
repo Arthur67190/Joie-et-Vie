@@ -450,6 +450,7 @@ def GetMenuPrincipal(organisateur=None, user=None):
     menu_comptabilite_operations.Add(code="operations_tresorerie_liste", titre="Liste des opérations de trésorerie", icone="file-text-o")
     #menu_comptabilite_operations.Add(code="operations_budgetaires_liste", titre="Liste des opérations budgétaires", icone="file-text-o")
     menu_comptabilite_operations.Add(code="virements_liste", titre="Liste des virements interne", icone="file-text-o")
+    menu_comptabilite_operations.Add(code="edition_justifs", titre="Edition PDF des justificatifs", icone="file-text-o")
 
     # Analyse
     menu_comptabilite_analyse = menu_comptabilite.Add(titre="Analyse")

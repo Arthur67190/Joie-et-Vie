@@ -419,6 +419,9 @@ class Liste(Page, crud.Liste):
                     self.Create_bouton_modifier(url=reverse(kwargs["view"].url_modifier, args=[instance.compte_id, instance.pk])),
                     self.Create_bouton_supprimer(url=reverse(kwargs["view"].url_supprimer, args=[instance.compte_id, instance.pk])),
                 ]
+                if instance.document:
+                    html.append(self.Create_bouton_ouvrir(url=instance.document.url))
+
             return self.Create_boutons_actions(html)
 
 

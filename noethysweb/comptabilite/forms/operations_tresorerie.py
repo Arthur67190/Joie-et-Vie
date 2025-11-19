@@ -92,6 +92,7 @@ class Formulaire(FormulaireBase, ModelForm):
             "observations": forms.Textarea(attrs={'rows': 3}),
             "tiers": Select_avec_commandes_advanced(attrs={"id_form": "tiers_form", "module_form": "parametrage.forms.tiers", "nom_objet": "un tiers", "champ_nom": "nom"}),
             "mode": Select_avec_commandes_advanced(attrs={"id_form": "modes_reglements_form", "module_form": "parametrage.forms.modes_reglements", "nom_objet": "un mode de règlement", "champ_nom": "label"}),
+            "document": forms.ClearableFileInput(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -110,6 +111,44 @@ class Formulaire(FormulaireBase, ModelForm):
         # Type
         if self.instance.pk:
             type = self.instance.type
+
+        if "document" in self.fields:
+            self.fields["document"].help_text = "Formats acceptés : PDF, JPG, PNG "
+
+
+        # --- Gestion du numéro de pièce ---
+        if type == "debit":
+            if self.instance.pk:
+                # Modification : griser si num_piece rempli
+                if self.instance.num_piece:
+                    self.fields["num_piece"].widget.attrs["readonly"] = True
+            else:
+                # Création → auto-complétion
+                last = (
+                    ComptaOperation.objects
+                    .filter(compte_id=idcompte, type="debit")
+                    .exclude(num_piece__isnull=True)
+                    .exclude(num_piece="")
+                    .order_by("-num_piece")
+                    .first()
+                )
+
+                next_number = 1
+                if last and last.num_piece:
+                    try:
+                        next_number = int(last.num_piece) + 1
+                    except ValueError:
+                        pass
+
+                self.fields["num_piece"].initial = next_number
+                self.fields["num_piece"].widget.attrs["readonly"] = True  # le grise
+
+        else:
+            # Type recette → ne pas afficher le champ
+            if "num_piece" in self.fields:
+                self.fields.pop("num_piece")
+            if "document" in self.fields:
+                self.fields.pop("document")
 
         # Date
         self.fields["date"].initial = datetime.date.today()
@@ -136,13 +175,14 @@ class Formulaire(FormulaireBase, ModelForm):
             Hidden("compte", value=idcompte),
             Hidden("type", value=type),
             Fieldset("Généralités",
+                     Field("num_piece"),
                 Field("date"),
-                Field("num_piece"),
                 Field("libelle"),
                 # Field("tiers"),
                 Field("mode"),
+                Field("document"),
 
-                PrependedText("montant", utils_preferences.Get_symbole_monnaie()),
+                     PrependedText("montant", utils_preferences.Get_symbole_monnaie()),
             ),
             Fieldset("Ventilation",
                 Div(

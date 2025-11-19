@@ -4014,6 +4014,7 @@ class ComptaOperation(models.Model):
     montant = models.DecimalField(verbose_name="Montant", max_digits=10, decimal_places=2, default=0.0)
     observations = models.TextField(verbose_name="Observations", blank=True, null=True)
     virement = models.ForeignKey(ComptaVirement, verbose_name="Virement", on_delete=models.CASCADE, blank=True, null=True)
+    document = models.FileField(verbose_name="Pièce justificative", storage=get_storage("justifs"), upload_to=get_uuid_path, blank=True, null=True)
 
     class Meta:
         db_table = "compta_operations"
