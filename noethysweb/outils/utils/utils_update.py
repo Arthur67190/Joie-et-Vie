@@ -3,7 +3,7 @@
 #  Noethysweb, application de gestion multi-activités.
 #  Distribué sous licence GNU GPL.
 
-import logging, os, datetime, codecs, zipfile, requests, shutil
+import logging, os, datetime, codecs, zipfile, requests, subprocess, glob
 logger = logging.getLogger(__name__)
 from urllib.request import urlopen, urlretrieve
 from noethysweb import version
@@ -55,26 +55,26 @@ def Recherche_update():
     return version_online_txt, changelog
 
 
-def Backup_database():
-    """Crée une sauvegarde de la base de données avec un timestamp dans le nom."""
+def backup_database():
+    """Crée une sauvegarde de la base de données avec un timestamp dans le nom en utilisant la commande SQLite backup."""
     # Récupération du chemin de la base de données
     databases = settings.DATABASES
     if 'default' not in databases:
         logger.debug("Aucune base de données 'default' trouvée.")
         return False
-
+    
     db_config = databases['default']
-
+    
     # On ne fait la sauvegarde que pour SQLite
     if db_config.get('ENGINE') != 'django.db.backends.sqlite3':
         logger.debug("La sauvegarde automatique n'est supportée que pour SQLite.")
         return False
-
+    
     db_path = db_config.get('NAME')
     if not db_path or not os.path.isfile(db_path):
         logger.debug(f"Fichier de base de données non trouvé: {db_path}")
         return False
-
+    
     # Création du nom de fichier avec timestamp
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     db_dir = os.path.dirname(db_path)
@@ -82,24 +82,64 @@ def Backup_database():
     db_name, db_ext = os.path.splitext(db_filename)
     backup_filename = f"{db_name}_backup_{timestamp}{db_ext}"
     backup_path = os.path.join(db_dir, backup_filename)
-
+    
     try:
-        logger.debug(f"Sauvegarde de la base de données: {db_path} -> {backup_path}")
-        shutil.copy2(db_path, backup_path)
+        logger.debug(f"Sauvegarde de la base de données avec SQLite backup: {db_path} -> {backup_path}")
 
-        # Sauvegarde aussi les fichiers WAL et SHM si présents (pour SQLite)
-        for ext in ['-wal', '-shm', '.sqlite3-wal', '.sqlite3-shm']:
-            wal_path = db_path + ext if ext.startswith('-') else db_path.replace(db_ext, ext)
-            if os.path.isfile(wal_path):
-                wal_backup = backup_path + ext if ext.startswith('-') else backup_path.replace(db_ext, ext)
-                shutil.copy2(wal_path, wal_backup)
-                logger.debug(f"Sauvegarde du fichier: {wal_path} -> {wal_backup}")
+        # Utilisation de la commande backup de SQLite via CLI
+        # Exécution de: sqlite3 db_path ".backup backup_path"
+        result = subprocess.run(
+            ['sqlite3', db_path, f'.backup {backup_path}'],
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minutes timeout
+        )
+
+        if result.returncode != 0:
+            logger.error(f"Erreur lors de la sauvegarde SQLite: {result.stderr}")
+            return False
 
         logger.debug("Sauvegarde de la base de données terminée avec succès.")
+
+        # Nettoyage: garder seulement les 5 derniers backups
+        cleanup_old_backups(db_dir, db_name, db_ext)
+
         return backup_path
+    except subprocess.TimeoutExpired:
+        logger.error("La sauvegarde de la base de données a dépassé le délai d'attente (5 minutes).")
+        return False
+    except FileNotFoundError:
+        logger.error("La commande sqlite3 n'a pas été trouvée. Assurez-vous que SQLite est installé.")
+        return False
     except Exception as err:
         logger.error(f"Erreur lors de la sauvegarde de la base de données: {err}")
         return False
+
+
+def cleanup_old_backups(db_dir, db_name, db_ext, max_backups=5):
+    """Supprime les anciens backups en ne gardant que les max_backups plus récents."""
+    try:
+        # Recherche tous les fichiers de backup
+        pattern = os.path.join(db_dir, f"{db_name}_backup_*{db_ext}")
+        backup_files = glob.glob(pattern)
+
+        if len(backup_files) <= max_backups:
+            logger.debug(f"Nombre de backups ({len(backup_files)}) <= {max_backups}, pas de nettoyage nécessaire.")
+            return
+
+        # Trier par date de modification (du plus ancien au plus récent)
+        backup_files.sort(key=os.path.getmtime)
+
+        # Supprimer les plus anciens pour ne garder que max_backups
+        files_to_delete = backup_files[:-max_backups]
+
+        for file_path in files_to_delete:
+            logger.debug(f"Suppression de l'ancien backup: {file_path}")
+            os.remove(file_path)
+
+        logger.debug(f"Nettoyage terminé. {len(files_to_delete)} backup(s) supprimé(s).")
+    except Exception as err:
+        logger.error(f"Erreur lors du nettoyage des anciens backups: {err}")
 
 
 def Update():
@@ -127,7 +167,7 @@ def Update():
 
     # Backup de la db
     logger.debug("Sauvegarde de la base de données avant mise à jour...")
-    backup_result = Backup_database()
+    backup_result = backup_database()
     if backup_result:
         logger.debug(f"Sauvegarde créée: {backup_result}")
     else:
