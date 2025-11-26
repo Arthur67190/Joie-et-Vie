@@ -40,7 +40,7 @@
             {% block box_soustitre %}<div class="box-soustitre">Derniers messages reçus</div>{% endblock %}
             {% block card_body_classe %}p-0{% endblock %}
             {% block box_contenu %}
-                {% for message in messagerie_liste_messages_non_lus %}
+                {% for message in liste_messages_non_lus %}
                     <div class="message-box {% if message.structure == structure and message.famille == famille %}bg-primary{% endif %}">
                         <a href="{% url 'messagerie_portail' idfamille=message.famille_id idstructure=message.structure_id %}">
                             <div class="media">
@@ -71,7 +71,7 @@
             {% block box_soustitre %}<div class="box-soustitre">Messages lus récemment</div>{% endblock %}
             {% block card_body_classe %}p-0{% endblock %}
             {% block box_contenu %}
-                {% for message in messagerie_liste_messages_lus %}
+                {% for message in liste_messages_lus %}
                     <div class="message-box {% if message.structure == structure and message.famille == famille %}bg-primary{% endif %}">
                         <a href="{% url 'messagerie_portail' idfamille=message.famille_id idstructure=message.structure_id %}">
                             <div class="media">

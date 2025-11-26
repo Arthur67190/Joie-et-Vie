@@ -14,6 +14,8 @@ from outils.forms.messagerie_portail import Formulaire, Envoi_notification_messa
 from django.db.models import OuterRef, Subquery
 from django.utils import timezone
 from datetime import timedelta
+from django.db.models import Max, F, Q
+
 
 def Marquer_lu(request):
     """ Marquer un message comme lu ou non """
@@ -34,29 +36,13 @@ class Page(crud.Page):
     def get_context_data(self, **kwargs):
         context = super(Page, self).get_context_data(**kwargs)
         context['page_titre'] = "Messagerie"
+
         liste_messages_discussion = PortailMessage.objects.select_related("famille", "structure", "utilisateur").filter(famille_id=self.get_idfamille(), structure_id=self.get_idstructure()).order_by("date_creation")
         context['liste_messages_discussion'] = list(liste_messages_discussion)
-        messages_non_lus = PortailMessage.objects.select_related("famille", "structure").filter(structure__in=self.request.user.structures.all(), utilisateur__isnull=True, date_lecture__isnull=True).order_by("date_creation")
-        context['messagerie_liste_messages_non_lus'] = list(messages_non_lus)
-
-        # Date limite : 3 mois en arrière
-        date_limite = timezone.now() - timedelta(days=90)
-
-        # Sous-requête pour récupérer le dernier message par famille dans les 3 derniers mois
-        dernier_message_subquery = PortailMessage.objects.filter(
-            famille_id=OuterRef('famille_id'),
-            structure__in=self.request.user.structures.all(),
-            date_creation__gte=date_limite
-        ).order_by('-date_creation')
-
-        # Liste des derniers messages par famille, mais exclure celles avec messages non lus
-        liste_messages_lus = PortailMessage.objects.filter(
-            idmessage__in=Subquery(dernier_message_subquery.values('idmessage')[:1])
-        ).exclude(
-            famille__in=messages_non_lus.values('famille_id')
-        ).select_related('famille', 'structure').order_by('-date_creation')
-
-        context['messagerie_liste_messages_lus'] = list(liste_messages_lus)
+        messages_non_lus = context.get("liste_messages_non_lus", [])
+        messages_lus = context.get("liste_messages_lus", [])
+        context['liste_messages_non_lus'] = messages_non_lus
+        context['liste_messages_lus'] = messages_lus
 
 
         if self.get_idstructure():
@@ -70,7 +56,7 @@ class Page(crud.Page):
 
         # Indiquer que les messages de la discussion ouverte sont lus
         if messages_non_lus and self.get_idfamille():
-            messages_non_lus.filter(famille_id=self.get_idfamille()).update(date_lecture=datetime.datetime.now())
+            messages_non_lus.filter(famille_id=self.get_idfamille(), structure_id=self.get_idstructure()).update(date_lecture=datetime.datetime.now())
 
         # Envoi famille
         activites_accessibles = Activite.objects.filter(structure__in=self.request.user.structures.all())

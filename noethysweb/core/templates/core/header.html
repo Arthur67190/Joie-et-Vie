@@ -115,6 +115,10 @@
                     </a>
 
                     <div class="dropdown-menu dropdown-menu-xl dropdown-menu-left">
+                        <a href="{% url 'messagerie_portail' %}" class="dropdown-item dropdown-footer">
+                            <strong>Accéder à la messagerie</strong>
+                        </a>
+                        <div class="dropdown-divider"></div>
                         <span class="dropdown-item dropdown-header text-center">{{ liste_messages_non_lus|length }} nouveau{{ liste_messages_non_lus|length|pluralize:"x" }} message{{ liste_messages_non_lus|length|pluralize }}</span>
                         <div class="dropdown-divider"></div>
 
@@ -151,9 +155,7 @@
                             <div class="dropdown-divider"></div>
                         {% endfor %}
 
-                        <a href="{% url 'messagerie_portail' %}" class="dropdown-item dropdown-footer">
-                            <strong>Accéder à la messagerie</strong>
-                        </a>
+
                     </>
                 </li>
 

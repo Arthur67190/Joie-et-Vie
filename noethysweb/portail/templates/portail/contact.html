@@ -4,78 +4,244 @@
 {% load static %}
 {% load embed %}
 
-
 {% block styles %}
     {{ block.super }}
+    <style>
+        .box-soustitre {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #000;
+            margin-bottom: 0.5rem;
+        }
+        .message-box {
+            padding: 0.5rem 1rem;
+        }
+    </style>
 {% endblock %}
 
 {% block contenu_page %}
 
-    {# Texte d'introduction #}
-    {% if parametres_portail.contact_intro %}
-        <div style="margin-bottom: 20px;">
-            <i class="fa fa-info-circle margin-r-5"></i>{{ parametres_portail.contact_intro }}
+<div class="row">
+
+    {# Colonne gauche : messages non lus + lus #}
+    <div class="col-md-4">
+
+        <div class="text-center mb-2">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#nouvelleConversationModal">
+                Nouvelle conversation
+            </button>
         </div>
-    {% endif %}
-
-    {# Messagerie #}
-    {% embed 'core/box.html' with box_titre=True box_introduction=True %}
-        {% block box_theme %}card-outline card-lightblue{% endblock %}
-        {% block box_titre %}Messagerie{% endblock %}
-        {% block box_introduction %}{% blocktrans %}Cliquez ci-dessous sur la structure ou le service avec lequel vous souhaitez converser{% endblocktrans %}.{% endblock %}
-        {% block box_contenu %}
-            {% for structure in liste_structures_messagerie %}
-
-                {% with dict_messages_non_lus|get_item:structure.pk as nbre_messages_non_lus %}
-                <a class="btn btn-app" href="{% url 'portail_messagerie' idstructure=structure.pk %}">
-                    {% if nbre_messages_non_lus %}
-                        <span class="badge bg-danger">{{ nbre_messages_non_lus }} {% if nbre_messages_non_lus == 1 %}{% blocktrans %}non lu{% endblocktrans %}{% else %}{% blocktrans %}non lus{% endblocktrans %}{% endif %}</span>
-                    {% endif %}
-                    <i class="fa fa-comments"></i>{{ structure.nom }}
-                </a>
-                {% endwith %}
-
-            {% endfor %}
-        {% endblock box_contenu %}
-        {% block box_conclusion %}{{ box_conclusion|safe }}{% endblock %}
-    {% endembed %}
 
 
-    {# Coordonnées des structures #}
-    {% if parametres_portail.contact_afficher_coords_structures %}
-        {% embed 'core/box.html' with box_titre=True box_introduction=False %}
+        {# Messages non lus #}
+        {% embed 'core/box.html' with box_titre=True %}
             {% block box_theme %}card-outline card-lightblue{% endblock %}
-            {% block box_titre %}{% blocktrans %}Annuaire des structures ou services{% endblocktrans %}{% endblock %}
+            {% block box_titre %}Messages non lus{% endblock %}
+            {% block box_soustitre %}<div class="box-soustitre">Derniers messages reçus</div>{% endblock %}
+            {% block card_body_classe %}p-0{% endblock %}
             {% block box_contenu %}
-                <div class="row">
-                    {% for structure in liste_structures_coords %}
-                        <div class="col-md-4 pl-3 pr-3 pb-3 pt-1">
-                            <div><strong>{{ structure.nom }}</strong></div>
-                            {% if structure.rue or structure.cp or structure.ville %}<div><i class='fa fa-map-marker margin-r-5'></i>{{ structure.rue }} {{ structure.cp }} {{ structure.ville }}</div>{% endif %}
-                            {% if structure.tel %}<div><i class='fa fa-phone margin-r-5'></i>{{ structure.tel }}</div>{% endif %}
-                            {% if structure.site %}<div><i class='fa fa-globe margin-r-5'></i><a href="http://{{ structure.site }}" target="_blank">{{ structure.site }}</a></div>{% endif %}
+                {% for message in liste_messages_non_lus %}
+                    <div class="message-box {% if message.structure == structure and message.famille == famille %}bg-primary{% endif %}">
+                        <a href="{% url 'portail_messagerie' idstructure=message.structure_id %}">
+                            <div class="media">
+                                <div class="media-body">
+                                    <h3 class="dropdown-item-title">
+                                        <i class="fa fa-envelope text-danger mr-1"></i> {{ message.famille.nom }}
+                                    </h3>
+                                    <p class="text-xs m-0">{{ message.texte|striptags|truncatechars:50 }}</p>
+                                    <p class="mt-1 m-0" style="font-size: 10px;">
+                                        <i class="fa fa-clock-o mr-1"></i>{{ message.date_creation|timesince }} |
+                                        <i class="fa fa-home mr-1"></i>{{ message.structure }}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="dropdown-divider m-0"></div>
+                {% empty %}
+                    <div class="p-2 text-success">Aucun message non lu</div>
+                {% endfor %}
+            {% endblock box_contenu %}
+        {% endembed %}
+
+        {# Messages lus #}
+        {% embed 'core/box.html' with box_titre=True %}
+            {% block box_theme %}card-outline card-lightblue{% endblock %}
+            {% block box_titre %}Conversations en cours{% endblock %}
+            {% block box_soustitre %}<div class="box-soustitre">Messages lus récemment</div>{% endblock %}
+            {% block card_body_classe %}p-0{% endblock %}
+            {% block box_contenu %}
+                {% for message in liste_messages_lus %}
+                    <div class="message-box {% if message.structure == structure and message.famille == famille %}bg-primary{% endif %}">
+                        <a href="{% url 'portail_messagerie' idstructure=message.structure_id %}">
+                            <div class="media">
+                                <div class="media-body">
+                                    <h3 class="dropdown-item-title">
+                                        <i class="fa fa-envelope-open text-success mr-1"></i> {{ message.famille.nom }}
+                                    </h3>
+                                    <p class="text-xs m-0">{{ message.texte|striptags|truncatechars:50 }}</p>
+                                    <p class="mt-1 m-0" style="font-size: 10px;">
+                                        <i class="fa fa-clock-o mr-1"></i>{{ message.date_creation|timesince }} |
+                                        <i class="fa fa-home mr-1"></i>{{ message.structure }}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="dropdown-divider m-0"></div>
+                {% empty %}
+                    <div class="p-2 text-muted">Aucun message lu récent</div>
+                {% endfor %}
+            {% endblock box_contenu %}
+        {% endembed %}
+
+    </div>
+
+    {# Colonne droite : messagerie #}
+    <div class="col-md-8">
+        {% if famille %}
+            {% embed 'core/box.html' with box_titre=True box_conclusion=True %}
+                {% block box_theme %}card-outline card-lightblue direct-chat direct-chat-primary{% endblock %}
+                {% block box_titre %}Discussion avec la famille {{ famille.nom }} pour la structure {{ structure.nom }}{% endblock %}
+                {% block box_contenu %}
+                    {% if not liste_messages_discussion %}
+                        <div style="padding:20px;">Aucun message récent.</div>
+                    {% else %}
+                        <div id="div_messages" class="direct-chat-messages" style="height: 400px; padding: 20px;">
+                            {% for message in liste_messages_discussion %}
+                                {% if message.utilisateur %}
+                                    <div class="direct-chat-msg right">
+                                        <div class="direct-chat-infos clearfix">
+                                            <span class="direct-chat-name float-right">{% firstof message.utilisateur.get_full_name message.utilisateur message.utilisateur.get_short_name %}</span>
+                                            <span class="direct-chat-timestamp float-left">{{ message.date_creation|date:"l j F Y H:i" }}</span>
+                                        </div>
+                                        <img class="direct-chat-img" src="{% static "images/user.png" %}">
+                                        <div class="direct-chat-text">{{ message.texte|safe }}</div>
+                                    </div>
+                                {% else %}
+                                    <div class="direct-chat-msg">
+                                        <div class="direct-chat-infos clearfix">
+                                            <span class="direct-chat-name float-left">{{ message.famille }}</span>
+                                            <span class="direct-chat-timestamp float-right">
+                                                {{ message.date_creation|date:"l j F Y H:i" }}
+                                                <span class="custom-switch custom-switch-off-danger custom-switch-on-success" title="Marquer comme lu">
+                                                    <input type="checkbox" class="custom-control-input case_switch" id="switch_{{ message.pk }}" data-idmessage="{{ message.pk }}" {% if message.date_lecture %}checked{% endif %}>
+                                                    <label class="custom-control-label" for="switch_{{ message.pk }}"></label>
+                                                </span>
+                                            </span>
+                                            {% if not message.date_lecture %}<span class="badge bg-danger ml-md-2">Nouveau</span>{% endif %}
+                                        </div>
+                                        <img class="direct-chat-img" src="{% static "images/user.png" %}">
+                                        <div class="direct-chat-text">{{ message.texte|safe }}</div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
                         </div>
-                    {% endfor %}
+                    {% endif %}
+                {% endblock box_contenu %}
+                {% block box_conclusion %}{% crispy form %}{% endblock %}
+            {% endembed %}
+        {% endif %}
+    </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="nouvelleConversationModal" tabindex="-1" role="dialog" aria-labelledby="nouvelleConversationModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+
+              <div class="modal-header">
+                <h5 class="modal-title" id="nouvelleConversationModalLabel">Nouvelle conversation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fermer">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+
+              <div class="modal-body">
+                 <div class="form-group">
+                    <label for="selectStructure">Sélectionnez la structure</label>
+                    <select class="form-control" id="selectStructure">
+                        <option value="">-- Choisir une structure --</option>
+                        {% for struct in liste_structures_messagerie %}
+                            <option value="{{ struct.idstructure }}">{{ struct.nom }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-            {% endblock box_contenu %}
-        {% endembed %}
-    {% endif %}
+
+                <!-- Lien qui redirige -->
+                <a id="lienNouvelleConversation"
+                   class="btn btn-success btn-block disabled"
+                   href="#"
+                   style="pointer-events: none;"
+                   data-url="{% url 'portail_messagerie' idstructure=0 %}">
+                   Ouvrir la conversation
+                </a>
+              </div>
+
+            </div>
+          </div>
+        </div>
 
 
-    {# Coordonnées de l'organisateur #}
-    {% if parametres_portail.contact_afficher_coords_organisateur %}
-        {% embed 'core/box.html' with box_titre=True box_introduction=False %}
-            {% block box_theme %}card-outline card-lightblue{% endblock %}
-            {% block box_titre %}{% blocktrans %}Coordonnées de l'organisateur{% endblocktrans %}{% endblock %}
-            {% block box_contenu %}
-                <div class="m-2">
-                    <div><strong>{{ organisateur.nom }}</strong></div>
-                    {% if organisateur.rue or organisateur.cp or organisateur.ville %}<div><i class='fa fa-map-marker margin-r-5'></i>{{ organisateur.rue }} {{ organisateur.cp }} {{ organisateur.ville }}</div>{% endif %}
-                    {% if organisateur.tel %}<div><i class='fa fa-phone margin-r-5'></i>{{ organisateur.tel }}</div>{% endif %}
-                    {% if organisateur.site %}<div><i class='fa fa-globe margin-r-5'></i><a href="http://{{ organisateur.site }}" target="_blank">{{ organisateur.site }}</a></div>{% endif %}
-                </div>
-            {% endblock box_contenu %}
-        {% endembed %}
-    {% endif %}
+        <script>
+        const selectStructure = document.getElementById("selectStructure");
+        const lien = document.getElementById("lienNouvelleConversation");
+
+        function updateLien() {
+            const idstructure = selectStructure.value;
+
+            if (idstructure) {
+                // URL modèle provenant de Django : /messagerie/0/
+                let urlTemplate = lien.dataset.url;
+
+                // Remplacement correct du 0 final par le bon ID
+                let urlFinale = urlTemplate.replace(/0\/?$/, idstructure);
+
+                lien.href = urlFinale;
+                lien.classList.remove("disabled");
+                lien.style.pointerEvents = "auto";
+                console.log("Lien activé :", lien.href);
+            } else {
+                lien.href = "#";
+                lien.classList.add("disabled");
+                lien.style.pointerEvents = "none";
+                console.log("Lien désactivé");
+            }
+        }
+
+        selectStructure.addEventListener("change", updateLien);
+        </script>
+
+
+        <script>
+            // Scroll auto en bas de la liste
+            $("#div_messages").scrollTop($("#div_messages").get(0).scrollHeight);
+
+            $(document).ready(function() {
+                $(".case_switch").on("change", function(e) {
+                    $.ajax({
+                        type: "POST",
+                        url: "{% url 'ajax_message_marquer_lu' %}",
+                        data: {
+                            idmessage: $(this).data("idmessage"),
+                            etat: this.checked,
+                            csrfmiddlewaretoken: "{{ csrf_token }}",
+                        },
+                        datatype: "json",
+                        success: function(data){
+                            toastr.success("Modification du message effectuée");
+                        },
+                        error: function(data) {
+                            toastr.error(data.responseJSON.erreur);
+                        }
+                    })
+                })
+            })
+        </script>
+
+
+
+
+</div>
 
 {% endblock contenu_page %}

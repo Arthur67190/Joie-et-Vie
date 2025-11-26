@@ -12,9 +12,12 @@ from django.core.cache import cache
 from django.shortcuts import redirect
 from portail.views.menu import GetMenuPrincipal
 from noethysweb.version import GetVersion
-from core.models import Organisateur, Parametre
+from core.models import Organisateur, Parametre, PortailMessage, Famille, Structure
 from core.utils import utils_parametres, utils_portail, utils_historique
-
+from django.db.models import OuterRef, Subquery
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Max, F, Q
 
 class CustomView(LoginRequiredMixin, UserPassesTestMixin):
     """ Implémente les données de la page : menus..."""
@@ -94,6 +97,68 @@ class CustomView(LoginRequiredMixin, UserPassesTestMixin):
         # Mémorise le fil d'ariane
         if context['menu_actif'] != None:
             context['breadcrumb'] = context['menu_actif'].GetBreadcrumb()
+
+        # 1) Famille du user
+        famille_user = self.request.user.famille
+
+        # 2) Date limite 3 mois
+        date_limite = timezone.now() - timedelta(days=90)
+
+        # 3) Messages NON lus pour cette famille, toutes structures du user
+        messages_non_lus = PortailMessage.objects.filter(
+            famille=famille_user,
+            utilisateur__isnull=False,
+            date_lecture__isnull=True
+        )
+
+        # On récupère le dernier non lu par couple (famille, structure)
+        dernier_messages_non_lus_ids = (
+            messages_non_lus
+            .values('famille_id', 'structure_id')
+            .annotate(dernier_id=Max('idmessage'))
+            .values_list('dernier_id', flat=True)
+        )
+
+        # Couples (famille, structure) qui ont un message non lu
+        couples_non_lus = list(
+            messages_non_lus.values_list('famille_id', 'structure_id')
+        )
+
+        # 4) Dernier message LU (ou lu+non lu) dans les 3 derniers mois
+        #    pour les couples qui n'ont PAS de non lu
+        dernier_messages_lus_ids = (
+            PortailMessage.objects
+            .filter(
+                famille=famille_user,
+                date_creation__gte=date_limite
+            )
+            .exclude(
+                # On exclut les couples qui ont déjà un non lu
+                Q(famille_id__in=[f for f, s in couples_non_lus]) &
+                Q(structure_id__in=[s for f, s in couples_non_lus])
+            )
+            .values('famille_id', 'structure_id')
+            .annotate(dernier_id=Max('idmessage'))
+            .values_list('dernier_id', flat=True)
+        )
+
+        # 5) Récupération objets complets
+
+        # Messages non lus (groupés famille + structure)
+        context["liste_messages_non_lus"] = (
+            PortailMessage.objects
+            .filter(idmessage__in=dernier_messages_non_lus_ids)
+            .select_related('famille', 'structure')
+            .order_by('date_creation')
+        )
+
+        # Derniers messages lus (groupés famille + structure)
+        context["liste_messages_lus"] = (
+            PortailMessage.objects
+            .filter(idmessage__in=dernier_messages_lus_ids)
+            .select_related('famille', 'structure')
+            .order_by('-date_creation')
+        )
 
         return context
 
