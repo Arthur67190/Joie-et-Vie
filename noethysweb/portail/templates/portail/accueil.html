@@ -171,6 +171,10 @@
         <h5 class="mb-2 text-secondary">{% trans "Actualités" %}</h5>
         <div class="card-columns">
             {% for article in articles %}
+                {% if article.album %}
+                    <a href="{% url 'portail_album' code=article.album.code %}" style="text-decoration: none; color: inherit;">
+                {% endif %}
+
                 <div class="card mb-4 {% if article.couleur_fond %}bg-{{ article.couleur_fond }}{% endif %}" style="margin-top: 1px;">
                     {% if article.Get_anciennete <= 3 %}
                         <div class="ribbon-wrapper ribbon-lg">
@@ -200,9 +204,14 @@
                         <span style="color: #cecece;font-size: 70%;">{% blocktrans %}Publié le{% endblocktrans %} {{ article.date_debut|date:'d/m/Y' }} {% trans "par" %} {% firstof article.auteur.get_short_name article.auteur %}</span>
                     </div>
                 </div>
+
+                {% if article.album %}
+                    </a>
+                {% endif %}
             {% endfor %}
         </div>
     {% endif %}
+
 
     {# Modal : Articles popups #}
     {% if articles_popups %}

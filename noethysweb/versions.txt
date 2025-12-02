@@ -12,6 +12,7 @@ Version 1.3.5.5.104 (25/11/2025)
 - suppression compta avec suppression reglement
 - Message alerte règlement
 - Annulation d'une demande d'inscription par les parents
+- Article clicable quand il y a un album
 
 
 Version 1.3.5.5.103 (19/11/2025)
