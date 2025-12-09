@@ -3937,6 +3937,7 @@ class ComptaCategorie(models.Model):
     # journal = models.CharField(verbose_name="Journal", max_length=10, blank=True, null=True)
     compte_comptable = models.ForeignKey(ComptaCompteComptable, verbose_name="Compte comptable", on_delete=models.PROTECT, blank=True, null=True)
     structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=True, null=True)
+    bilan = models.BooleanField(verbose_name="Compte intégré au bilan", default=True)
 
     class Meta:
         db_table = "compta_categories"

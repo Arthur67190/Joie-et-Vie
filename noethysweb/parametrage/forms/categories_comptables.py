@@ -38,6 +38,7 @@ class Formulaire(FormulaireBase, ModelForm):
             Fieldset("Généralités",
                 Field("type"),
                 Field("nom"),
+                Field('bilan'),
                 #Field("abrege"),
                 #Field("compte_comptable"),
             ),

@@ -22,6 +22,7 @@ class View(CustomView, TemplateView):
         context['afficher_menu_brothers'] = True
         if "form_parametres" not in kwargs:
             context['form_parametres'] = Formulaire(request=self.request)
+        context.update(kwargs)
         return context
 
     def post(self, request, **kwargs):
@@ -29,23 +30,24 @@ class View(CustomView, TemplateView):
         if not form.is_valid():
             return self.render_to_response(self.get_context_data(form_parametres=form))
 
-        liste_lignes = self.Get_resultats(parametres=form.cleaned_data)
+        liste_lignes, soldes_hors_bilan = self.Get_resultats(parametres=form.cleaned_data)
         context = {
             "form_parametres": form,
             "liste_lignes": json.dumps(liste_lignes),
+            "soldes_hors_bilan": soldes_hors_bilan,
         }
         return self.render_to_response(self.get_context_data(**context))
 
     def Get_resultats(self, parametres={}):
         comptes = parametres["comptes"]
 
-        condition_structure = Q(structure__in=self.request.user.structures.all()) | Q(structure__isnull=True)
+        condition_structure = (Q(structure__in=self.request.user.structures.all()) | Q(structure__isnull=True)) & Q(bilan=True)
 
         # Importation des catégories
         dict_categories = {categorie.pk: categorie for categorie in ComptaCategorie.objects.filter(condition_structure)}
 
         # Importation des ventilations
-        condition = Q(operation__compte__in=comptes)
+        condition = Q(operation__compte__in=comptes) & Q(categorie__bilan=True)
         ventilations_tresorerie = Counter({ventilation["categorie"]: ventilation["total"] for ventilation in ComptaVentilation.objects.values("categorie").filter(condition).annotate(total=Sum("montant"))})
         dict_realise = {dict_categories[idcategorie]: montant for idcategorie, montant in dict(ventilations_tresorerie).items()}
 
@@ -75,7 +77,6 @@ class View(CustomView, TemplateView):
                            })
 
         # Ligne de total
-        # Ligne de total
         total_realise = (regroupements.get("credit", {}).get("realise", decimal.Decimal(0))
                          - regroupements.get("debit", {}).get("realise", decimal.Decimal(0)))
 
@@ -86,4 +87,16 @@ class View(CustomView, TemplateView):
             "realise": float(total_realise),  # <-- on injecte le total ici
         })
 
-        return lignes
+        # Soldes hors bilan
+        condition_structure_hb = (Q(structure__in=self.request.user.structures.all()) | Q(structure__isnull=True))
+        categories_hors_bilan = ComptaCategorie.objects.filter(condition_structure_hb, bilan=False)
+        soldes_hors_bilan = []
+        for cat in categories_hors_bilan:
+            solde = ComptaVentilation.objects.filter(
+                operation__compte__in=comptes,
+                categorie=cat
+            ).aggregate(total=Sum("montant"))["total"] or decimal.Decimal(0)
+            soldes_hors_bilan.append((cat.nom, solde, cat.type))  # <-- tuple au lieu de string
+
+        # On renvoie les deux listes
+        return lignes, soldes_hors_bilan
