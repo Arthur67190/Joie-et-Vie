@@ -13,7 +13,7 @@ from django.template.context_processors import csrf
 from crispy_forms.utils import render_crispy_form
 from core.views.mydatatableview import MyDatatable, columns, helpers
 from core.views import crud
-from core.models import ComptaOperation, CompteBancaire, ComptaVentilation, ComptaCategorie
+from core.models import ComptaOperation, CompteBancaire, ComptaVentilation, ComptaCategorie, ComptaAvance, Structure
 from core.utils import utils_dates, utils_parametres, utils_texte
 from comptabilite.forms.operations_tresorerie import Formulaire, FORMSET_CATEGORIES
 from comptabilite.forms.ventilation_tresorerie import Formulaire as Formulaire_ventilation
@@ -197,7 +197,9 @@ class Page(crud.Page):
             context['boutons_liste'] = [
                 {"label": "Ajouter une dépense", "classe": "btn btn-primary", "href": reverse_lazy(self.url_ajouter_debit, kwargs={'categorie': self.Get_categorie()}), "icone": "fa fa-plus"},
                 {"label": "Ajouter une recette", "classe": "btn btn-primary", "href": reverse_lazy(self.url_ajouter_credit, kwargs={'categorie': self.Get_categorie()}), "icone": "fa fa-plus"},
-                {"label": "Ajouter un virement interne", "classe": "btn btn-default", "href": reverse_lazy("virements_ajouter"), "icone": "fa fa-plus"}, ]
+                {"label": "Ajouter un virement interne", "classe": "btn btn-default", "href": reverse_lazy("virements_ajouter"), "icone": "fa fa-plus"},
+                {"label": "Régulariser une avance", "classe": "btn btn-default", "href": reverse_lazy("regul_avances"), "icone": "fa fa-plus"},
+            ]
         else:
             context['box_introduction'] = "Vous pouvez saisir ici des opérations de trésorerie.<br><b>Vous devez avoir enregistré au moins un compte bancaire avant de pouvoir ajouter des opérations !</b>"
         return context
@@ -338,42 +340,87 @@ class Liste(Page, crud.Liste):
         context['afficher_menu_brothers'] = True
 
         # Stats du compte
+        from django.db.models import Sum, Case, When, F, DecimalField, Q
+
+        filtre_inclusion = Q(comptaoperation__avance__isnull=True) | Q(comptaoperation__regul_avance=True)
+
         stats = CompteBancaire.objects.filter(pk=self.Get_categorie()).aggregate(
-            total_debit=Sum(Case(
-                When(comptaoperation__type="debit", then=F("comptaoperation__montant")),
-                output_field=DecimalField(),
-                default=0
-            )),
-            total_credit=Sum(Case(
-                When(comptaoperation__type="credit", then=F("comptaoperation__montant")),
-                output_field=DecimalField(),
-                default=0
-            )),
-            solde_final=Sum(Case(
-                When(comptaoperation__type="credit", then=F("comptaoperation__montant")),
-                output_field=DecimalField(),
-                default=0
-            )) - Sum(Case(
-                When(comptaoperation__type="debit", then=F("comptaoperation__montant")),
-                output_field=DecimalField(),
-                default=0
-            )),
+            total_debit=Sum(
+                Case(
+                    When(Q(comptaoperation__type="debit") & filtre_inclusion, then=F("comptaoperation__montant")),
+                    output_field=DecimalField(),
+                    default=0
+                )
+            ),
+
+            total_credit=Sum(
+                Case(
+                    When(Q(comptaoperation__type="credit") & filtre_inclusion, then=F("comptaoperation__montant")),
+                    output_field=DecimalField(),
+                    default=0
+                )
+            ),
+            solde_final=Sum(
+                Case(
+                    When(Q(comptaoperation__type="credit") & filtre_inclusion, then=F("comptaoperation__montant")),
+                    output_field=DecimalField(),
+                    default=0
+                )
+            ) - Sum(
+                Case(
+                    When(Q(comptaoperation__type="debit") & filtre_inclusion, then=F("comptaoperation__montant")),
+                    output_field=DecimalField(),
+                    default=0
+                )
+            ),
         )
 
         total_debit = stats["total_debit"] or 0
         total_credit = stats["total_credit"] or 0
         solde_final = stats["solde_final"] or 0
 
-        context['box_conclusion'] = f"""
+        # --- Totaux par avance ---
+        from django.db.models import F, Value, Sum, Case, When, DecimalField
+
+        # --- Totaux par avance (une ligne par personne) ---
+        avances_stats = (
+            ComptaOperation.objects
+            .filter(
+                compte=self.Get_categorie(),
+                avance__isnull=False,
+                regul_avance=False,  # Exclure les régularisations
+                remb_avance=0
+            )
+            .values('avance__idcompta_avance', 'avance__nom')  # une ligne par avance/personne
+            .annotate(
+                total_montant=Sum(
+                    Case(
+                        When(type='debit', then=F('montant') * Value(-1)),
+                        When(type='credit', then=F('montant')),
+                        output_field=DecimalField(),
+                    )
+                )
+            )
+            .order_by('avance__nom')
+        )
+
+        html_avances = ""
+        if avances_stats:
+            html_avances = "<br><b>État des avances à régulariser :</b><br><table>"
+            for avance in avances_stats:
+                html_avances += f"<tr><td>{avance['avance__nom']} :</td><td style='padding-left:10px;'>{utils_texte.Formate_montant(avance['total_montant'])}</td></tr>"
+            html_avances += "</table>"
+
+        context['box_introduction'] = f"""
             <center>
                 <table style="font-weight:bold;">
                     <tr><td>Solde du compte :</td><td style='padding-left:10px;'>{utils_texte.Formate_montant(solde_final)}</td></tr>
                 </table>
-                <br>
                 <table style="font-weight;">
-                    <tr><td>Somme des débits :</td><td style='padding-left:10px;'>{utils_texte.Formate_montant(total_debit)}</td></tr>
-                    <tr><td>Somme des crédits :</td><td style='padding-left:10px;'>{utils_texte.Formate_montant(total_credit)}</td></tr>
+                    <tr><td>Somme des débits sur le compte :</td><td style='padding-left:10px;'>{utils_texte.Formate_montant(total_debit)}</td></tr>
+                    <tr><td>Somme des crédits sur le compte :</td><td style='padding-left:10px;'>{utils_texte.Formate_montant(total_credit)}</td></tr>
                 </table>
+                {html_avances}
             </center>
         """
         return context
@@ -390,12 +437,28 @@ class Liste(Page, crud.Liste):
             ordering = ["date"]
             processors = {
                 "date": helpers.format_date('%d/%m/%Y'),
+                "libelle": "Get_libelle_avance",
             }
             labels = {
                 "mode": "Mode",
                 "num_piece": "N° Pièce",
                 "releve": "Relevé",
             }
+
+        def Get_libelle_avance(self, instance, **kwargs):
+            """
+            Retourne le libellé avec le nom de l'avance entre parenthèses si elle existe,
+            sauf si l'opération est une régularisation (regul_avance=True)
+            Exemple: "Paiement transport (Jean Dupont) le 10/12/2025"
+            """
+            avance_nom = f" - ({instance.avance.nom})" if instance.avance else ""
+
+            # Si l'opération n'est pas une régularisation et a un remb_avance
+            regul = ""
+            if not instance.regul_avance and instance.remb_avance:
+                regul = " - régularisé"
+
+            return f"{instance.libelle}{avance_nom}{regul}"
 
         def Get_montant_debit(self, instance, **kwargs):
             if instance.type == "debit":
@@ -408,17 +471,28 @@ class Liste(Page, crud.Liste):
             return None
 
         def Get_actions_speciales(self, instance, *args, **kwargs):
-            """ Inclut la catégorie dans les boutons d'actions """
+            html = []
+
             if instance.virement:
                 html = [
                     self.Create_bouton_modifier(url=reverse("virements_modifier", args=[instance.virement_id])),
                     self.Create_bouton_supprimer(url=reverse("virements_supprimer", args=[instance.virement_id])),
                 ]
             else:
+                # Modifier URL
+                if instance.regul_avance:
+                    modifier_url = reverse("regul_avances_modifier", args=[instance.pk])
+                    supprimer_url = reverse("regul_avances_supprimer", args=[instance.pk])
+                else:
+                    modifier_url = reverse(kwargs["view"].url_modifier, args=[instance.compte_id, instance.pk])
+                    supprimer_url = reverse(kwargs["view"].url_supprimer, args=[instance.compte_id, instance.pk])
+
                 html = [
-                    self.Create_bouton_modifier(url=reverse(kwargs["view"].url_modifier, args=[instance.compte_id, instance.pk])),
-                    self.Create_bouton_supprimer(url=reverse(kwargs["view"].url_supprimer, args=[instance.compte_id, instance.pk])),
+                    self.Create_bouton_modifier(url=modifier_url),
+                    self.Create_bouton_supprimer(url=supprimer_url),
                 ]
+
+                # Bouton document
                 if instance.document:
                     html.append(self.Create_bouton_ouvrir(url=instance.document.url))
 

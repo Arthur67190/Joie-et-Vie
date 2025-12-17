@@ -1,6 +1,6 @@
 import logging
 from outils.views.procedures import BaseProcedure
-from core.models import Article, Activite, Structure, PortailDocument, SignatureEmail, Album, ModeleDocument
+from core.models import Article, Activite, Structure, PortailDocument, SignatureEmail, Album, ModeleDocument, QuestionnaireQuestion
 from django.db.models import F, Value
 from django.db.models.functions import Concat
 
@@ -39,19 +39,10 @@ class Procedure(BaseProcedure):
                 activites=activite
             ).update(structure=12)
 
-            # Signature email
-            sign_modifies = SignatureEmail.objects.filter(
-                structure__in=structures
-            ).update(structure=12)
-
             # Album
             album_modifies = Album.objects.filter(
-                structure__in=structures
-            ).update(structure=12)
-
-            # Modèle document
-            modeledoc_modifies = ModeleDocument.objects.filter(
-                structure__in=structures
+                structure__in=structures,
+                article__activite__in=activites
             ).update(structure=12)
 
             # Documents
@@ -76,10 +67,9 @@ class Procedure(BaseProcedure):
 
             return (
                 f"Nombre d'articles modifiés : {articles_modifies}, "
+                f"Nombre de questionnaires modifiés : {questionnaires_modifiés}, "
                 f"Nombre de documents modifiés : {strucdocument_modifies}, "
-                f"Nombre de signatures modifiées : {sign_modifies}, "
                 f"Nombre d'albums modifiés : {album_modifies}, "
-                f"Nombre de modèles de documents modifiés : {modeledoc_modifies}"
             )
 
         except Exception as e:

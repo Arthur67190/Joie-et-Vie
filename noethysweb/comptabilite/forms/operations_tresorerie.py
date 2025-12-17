@@ -92,6 +92,7 @@ class Formulaire(FormulaireBase, ModelForm):
             "observations": forms.Textarea(attrs={'rows': 3}),
             "tiers": Select_avec_commandes_advanced(attrs={"id_form": "tiers_form", "module_form": "parametrage.forms.tiers", "nom_objet": "un tiers", "champ_nom": "nom"}),
             "mode": Select_avec_commandes_advanced(attrs={"id_form": "modes_reglements_form", "module_form": "parametrage.forms.modes_reglements", "nom_objet": "un mode de règlement", "champ_nom": "label"}),
+            "avance": Select_avec_commandes_advanced(attrs={"id_form": "avance_form", "module_form": "parametrage.forms.avance", "nom_objet": "une personne", "champ_nom": "nom"}),
             "document": forms.ClearableFileInput(),
         }
 
@@ -181,6 +182,7 @@ class Formulaire(FormulaireBase, ModelForm):
                 # Field("tiers"),
                 Field("mode"),
                 Field("document"),
+                Field("avance"),
 
                      PrependedText("montant", utils_preferences.Get_symbole_monnaie()),
             ),

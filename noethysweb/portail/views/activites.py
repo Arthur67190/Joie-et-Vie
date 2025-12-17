@@ -11,7 +11,17 @@ from django.views.generic import TemplateView
 from core.models import Inscription, PortailRenseignement, Activite
 from portail.views.base import CustomView
 from portail.utils import utils_approbations
+from django.urls import reverse_lazy, reverse
+from django.http import JsonResponse
 
+
+def Appliquer_modification(request):
+    iddemande = int(request.POST["iddemande"])
+    etat = request.POST["etat"]
+    demande = PortailRenseignement.objects.get(idrenseignement=iddemande)
+    demande.delete()
+    url_redirection = reverse('portail_activites')
+    return JsonResponse({"redirection": url_redirection})
 
 class View(CustomView, TemplateView):
     menu_code = "portail_activites"
@@ -65,3 +75,4 @@ class View(CustomView, TemplateView):
         context["activites_ouvertes_inscription"] = Activite.objects.filter((Q(visible=True) & Q(portail_inscriptions_affichage="TOUJOURS") | (Q(portail_inscriptions_affichage="PERIODE") & Q(portail_inscriptions_date_debut__lte=datetime.datetime.now()) & Q(portail_inscriptions_date_fin__gte=datetime.datetime.now())))).exists()
 
         return context
+

@@ -40,11 +40,24 @@ class View(CustomView, TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        form = FormSignature(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
+        # Si le POST contient un fichier ou un champ signature, on traite la signature
+        if 'signature_image' in request.FILES or 'signature' in request.POST:
+            form = FormSignature(request.POST, request.FILES, instance=request.user)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Votre signature a été enregistrée avec succès.")
+            else:
+                messages.error(request, "Erreur lors de l'enregistrement de la signature.")
 
-            form.save()
-            messages.success(request, "Votre signature a été enregistrée avec succès.")
-        else:
-            messages.error(request, "Erreur lors de l'enregistrement de la signature.")
+        # Si le POST contient des structures
+        if 'structures' in request.POST:
+            structures_ids = request.POST.getlist("structures")
+            if structures_ids:
+                allowed = request.user.structures_admin.filter(idstructure__in=structures_ids)
+                request.user.structures.set(allowed)
+            else:
+                request.user.structures.clear()
+            messages.success(request, "Le filtre des structures a été mis à jour.")
+
         return self.get(request, *args, **kwargs)
+

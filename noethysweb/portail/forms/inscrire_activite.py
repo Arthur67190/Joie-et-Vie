@@ -98,11 +98,13 @@ class Formulaire_extra(FormulaireBase, forms.Form):
                                                                                       individu=individu)
 
             # Vérifiez si toutes les pièces sont valides
-            pieces_valides = [piece for piece in pieces_necessaires if piece["valide"]]
+            pieces_pas_valides = [piece for piece in pieces_necessaires if not piece["valide"]]
+
+            print(pieces_pas_valides)
 
             if not pieces_necessaires:
                 self.helper.layout.append(HTML("<p>Aucune pièce justificative n'est requise pour cette activité.</p>"))
-            elif not pieces_valides:
+            elif not pieces_pas_valides:
                 self.helper.layout.append(
                     HTML("<p>Toutes les pièces justificatives sont déjà fournies et validées.</p>"))
             else:

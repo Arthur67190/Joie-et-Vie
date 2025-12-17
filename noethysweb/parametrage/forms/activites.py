@@ -28,7 +28,7 @@ class Formulaire(FormulaireBase, ModelForm):
         # Affichage
         self.helper.layout = Layout(
             Field('nom'),
-            Field('abrege'),
+            Hidden('abrege', value="ABREGE"),
             Field("structure"),
             Hidden('date_debut', value=datetime.date(1977, 1, 1)),
             Hidden('date_fin', value=datetime.date(2999, 1, 1)),
@@ -36,3 +36,9 @@ class Formulaire(FormulaireBase, ModelForm):
                 Submit('submit', 'Enregistrer', css_class='btn-primary'),
                 HTML("""<a class="btn btn-danger" href="{% url 'activites_liste' %}"><i class='fa fa-ban margin-r-5'></i>Annuler</a>"""))
         )
+
+    def clean_structure(self):
+        structure = self.cleaned_data.get("structure")
+        if not structure:
+            raise forms.ValidationError("Vous devez sélectionner une structure.")
+        return structure

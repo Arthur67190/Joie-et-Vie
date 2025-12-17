@@ -1,0 +1,127 @@
+{% extends "core/box_in_page.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load embed %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'lib/bootbox/bootbox.min.js' %}"></script>
+{% endblock scripts %}
+
+{% block contenu_page %}
+{% embed 'core/box.html' %}
+    {% block box_theme %}card-outline card-lightblue{% endblock %}
+    {% block box_titre %}{{ box_titre }}{% endblock %}
+    {% block box_introduction %}{{ box_introduction|safe }}{% endblock %}
+
+    {% block box_contenu %}
+        {% crispy form %}
+    {% endblock %}
+
+{% endembed %}
+
+    {% include 'core/modal_pdf.html' %}
+
+    {# Lien de téléchargement du fichier d'export #}
+    <a id="download" download></a>
+
+    <script>
+        function exporter() {
+            var selected_ops = $("#id_operations").val();  // récupère les IDs sélectionnés
+            var date = $("#id_date").val();                // récupère la nouvelle date choisie
+            var mode_id = $("#id_mode_id").val();          // <-- récupère le mode sélectionné
+
+            if(!selected_ops || selected_ops.length == 0){
+                alert("Veuillez sélectionner au moins une opération !");
+                return;
+            }
+
+            $.ajax({
+                url: "{% url 'exporter_avances' %}",
+                method: "POST",
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'operations[]': selected_ops,
+                    'date': date,
+                    'mode_id' : mode_id
+                },
+                success: function(data){
+                    if(data.success){
+                        alert(data.message);
+                        window.location.href = "{% url 'operations_tresorerie_liste' %}";
+                    } else {
+                        alert(data.message);
+                    }
+                },
+                error: function(){
+                    alert("Erreur lors de la régularisation.");
+                }
+            });
+        }
+
+        function updateTotalOperations() {
+            var total = 0;
+            var persons = new Set();  // pour stocker tous les noms uniques
+            var selected = $('#id_operations').val();
+
+            // Supprimer le warning précédent s'il existe
+            $('#multiple_persons_warning').remove();
+
+            if (selected) {
+                selected.forEach(function(pk) {
+                    var option = $('#id_operations option[value="'+pk+'"]');
+                    var label = option.text();
+
+                    // Extraire le montant avant le €
+                    var matchMontant = label.match(/- ([0-9,.-]+) €/);
+                    // Extraire le type entre parenthèses
+                    var matchType = label.match(/\((credit|debit)\)$/i);
+                    // Extraire le nom de la personne
+                    var matchPerson = label.match(/payé par (.*?) le/);
+                    if(matchPerson) persons.add(matchPerson[1]);
+
+                    if (matchMontant && matchType) {
+                        var montant = parseFloat(matchMontant[1].replace(',', '.'));
+                        var type = matchType[1].toLowerCase();
+
+                        // Appliquer le signe selon le type
+                        if (type === 'credit') {
+                            montant = -montant;  // credit = elle a reçu = négatif
+                        } // debit = elle a payé = positif
+
+                        total += montant;
+                    }
+                });
+            }
+
+            // Préparer le texte des personnes
+            var personText = Array.from(persons).length === 1
+                ? Array.from(persons)[0]
+                : "plusieurs personnes";
+
+            // Afficher warning centré si plusieurs personnes
+            if (Array.from(persons).length > 1) {
+                $('#total_operations').before(
+                    '<div id="multiple_persons_warning" style="color: red; font-weight: bold; margin-bottom: 5px; text-align: center;">' +
+                    'Plusieurs personnes sont sélectionnées, veuillez n’en sélectionner qu’une seule.' +
+                    '</div>'
+                );
+            }
+
+            // Affichage selon le signe
+            if (total < 0) {
+                $('#total_operations').text('Montant total à percevoir de ' + personText + ' : ' + Math.abs(total).toFixed(2) + ' €');
+            } else {
+                $('#total_operations').text('Montant total à rembourser à ' + personText + ' : ' + total.toFixed(2) + ' €');
+            }
+        }
+
+        // Met à jour au changement
+        $('#id_operations').on('change', updateTotalOperations);
+        $(document).ready(updateTotalOperations);
+
+
+
+    </script>
+
+{% endblock contenu_page %}

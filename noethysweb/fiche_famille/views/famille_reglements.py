@@ -310,19 +310,15 @@ class Supprimer(Page, crud.Supprimer):
 
     def Avant_suppression(self, objet=None):
         # Met à jour le solde des factures associées aux prestations du règlement
+        print(objet)
         self.liste_idprestation = [ventilation.prestation_id for ventilation in Ventilation.objects.filter(reglement=objet)]
+        ComptaOperation.objects.filter(num_piece=objet.idreglement).delete()
         return True
 
     def Apres_suppression(self, objet=None):
         utils_factures.Maj_solde_actuel(liste_idprestation=self.liste_idprestation)
 
-    # def delete(self, request, *args, **kwargs):
-    #     """ Empêche la suppression de règlement déjà inclus dans dépôt """
-    #     if self.get_object().depot:
-    #         messages.add_message(request, messages.ERROR, "La suppression est impossible car ce règlement est déjà inclus dans un dépôt")
-    #         return HttpResponseRedirect(self.get_success_url(), status=303)
-    #     reponse = super(Supprimer, self).delete(request, *args, **kwargs)
-    #     return reponse
+
 
 
 class Supprimer_plusieurs(Page, crud.Supprimer_plusieurs):
@@ -333,6 +329,7 @@ class Supprimer_plusieurs(Page, crud.Supprimer_plusieurs):
         # Met à jour le solde des factures associées aux prestations du règlement
         for reglement in objets:
             self.liste_idprestation += [ventilation.prestation_id for ventilation in Ventilation.objects.filter(reglement=reglement)]
+            ComptaOperation.objects.filter(num_piece=reglement.idreglement).delete()
         return True
 
     def Apres_suppression(self, objets=[]):

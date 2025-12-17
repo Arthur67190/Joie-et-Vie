@@ -15,6 +15,8 @@ from core.models import Activite, Inscription, ResponsableActivite, Agrement, Gr
 from core.views.base import CustomView
 from parametrage.forms.activites import Formulaire
 from core.utils import utils_dates, utils_parametres
+from django.utils.html import format_html
+
 
 
 def Appliquer_modification(request):
@@ -84,6 +86,7 @@ class Liste(Page, crud.Liste):
         periode = columns.DisplayColumn("Dates", sources="date_fin", processor='Get_validite')
         nbre_inscrits = columns.TextColumn("Inscrits", sources="nbre_inscrits")
         visible = columns.TextColumn("Visible sur le portail", sources="visible", processor='Format_visible')
+        nom = columns.TextColumn("Nom", sources="nom", processor="Nom_avec_alert")
 
         class Meta:
             structure_template = MyDatatable.structure_template
@@ -93,6 +96,25 @@ class Liste(Page, crud.Liste):
                 'date_fin': helpers.format_date('%d/%m/%Y'),
             }
             ordering = ["-date_fin", "nom"]
+
+        def Nom_avec_alert(self, instance, *args, **kwargs):
+            manquants = self.Get_elements_manquants(instance)
+
+            if not manquants:
+                # Nom normal si tout est OK
+                return format_html(instance.nom)
+
+            # Crée le texte des éléments manquants séparés par un slash
+            elements_manquants = "et de ".join(manquants)
+
+            html = f"""
+                <div style="color:red; font-weight:bold;">
+                    <div>&#9888; {instance.nom} &#9888;</div>
+                    <div style="font-size:0.8em; margin-bottom:2px;">(Pas de {elements_manquants} configurés)<div>
+                </div>
+            """
+
+            return format_html(html)
 
         def Get_validite(self, instance, **kwargs):
             if not instance.date_fin or instance.date_fin.year == 2999:
@@ -115,6 +137,19 @@ class Liste(Page, crud.Liste):
 
         def Format_visible(self, instance, *args, **kwargs):
             return _("Oui") if instance.visible else _("Non")
+
+        def Get_elements_manquants(self, instance):
+            """Retourne la liste des champs manquants pour une activité"""
+            manquants = []
+
+            if not Groupe.objects.filter(activite=instance).exists():
+                manquants.append("groupe(s) ")
+
+            if not TarifLigne.objects.filter(activite=instance).exists():
+                manquants.append("tarif(s) ")
+
+
+            return manquants
 
 class Ajouter(Page, crud.Ajouter):
     form_class = Formulaire
@@ -141,7 +176,7 @@ class Supprimer(Page, crud.Supprimer):
 class Onglet(CustomView):
     menu_code = "activites_liste"
     liste_onglets = [
-        {"code": "resume", "label": "Résumé", "icone": "fa-home", "url": "activites_resume"},
+    #   {"code": "resume", "label": "Résumé", "icone": "fa-home", "url": "activites_resume"},
         {"rubrique": "Généralités"},
         {"code": "generalites", "label": "Généralités", "icone": "fa-info-circle", "url": "activites_generalites"},
     #   {"code": "responsables", "label": "Responsables", "icone": "fa-user", "url": "activites_responsables_liste"},

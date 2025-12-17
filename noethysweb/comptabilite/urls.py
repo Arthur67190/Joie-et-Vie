@@ -7,7 +7,7 @@ from django.urls import include, path
 from core.views import toc
 from core.decorators import secure_ajax
 from comptabilite.views import operations_tresorerie, operations_budgetaires, liste_comptes, liste_virements, suivi_budget, suivi_tresorerie, \
-                                rapprochements, rapprochements_selection, suivi_compta, edition_justifs
+                                rapprochements, rapprochements_selection, suivi_compta, edition_justifs, avances_regul
 
 
 urlpatterns = [
@@ -23,6 +23,9 @@ urlpatterns = [
     path('comptabilite/operations_tresorerie/liste/<int:categorie>', operations_tresorerie.Liste.as_view(), name='operations_tresorerie_liste'),
     path('comptabilite/operations_tresorerie/ajouter_debit/<int:categorie>', operations_tresorerie.Ajouter.as_view(type="debit"), name='operations_tresorerie_ajouter_debit'),
     path('comptabilite/operations_tresorerie/ajouter_credit/<int:categorie>', operations_tresorerie.Ajouter.as_view(type="credit"), name='operations_tresorerie_ajouter_credit'),
+    path('comptabilite/operations_tresorerie/ajouter_debit_avance/<int:categorie>', operations_tresorerie.Ajouter.as_view(type="debit_avance"), name='operations_tresorerie_ajouter_debit_avance'),
+    path('comptabilite/operations_tresorerie/ajouter_credit_avance/<int:categorie>', operations_tresorerie.Ajouter.as_view(type="credit_avance"), name='operations_tresorerie_ajouter_credit_avance'),
+    path('comptabilite/operations_tresorerie/ajouter_credit_avance/<int:categorie>', operations_tresorerie.Ajouter.as_view(type="remb"), name='operations_tresorerie_remb'),
     path('comptabilite/operations_tresorerie/modifier/<int:categorie>/<int:pk>', operations_tresorerie.Modifier.as_view(), name='operations_tresorerie_modifier'),
     path('comptabilite/operations_tresorerie/supprimer/<int:categorie>/<int:pk>', operations_tresorerie.Supprimer.as_view(), name='operations_tresorerie_supprimer'),
 
@@ -39,6 +42,11 @@ urlpatterns = [
     path('comptabilite/virements/ajouter', liste_virements.Ajouter.as_view(), name='virements_ajouter'),
     path('comptabilite/virements/modifier/<int:pk>', liste_virements.Modifier.as_view(), name='virements_modifier'),
     path('comptabilite/virements/supprimer/<int:pk>', liste_virements.Supprimer.as_view(), name='virements_supprimer'),
+
+    # Liste des avances
+    path('comptabilite/avances/regul', avances_regul.View.as_view(), name='regul_avances'),
+    path('comptabilite/avances/modifier/<int:pk>', avances_regul.Modifier.as_view(), name='regul_avances_modifier'),
+    path('comptabilite/avances/supprimer/<int:pk>', avances_regul.SupprimerRegul.as_view(), name='regul_avances_supprimer'),
 
     # Analyse
     path('comptabilite/suivi_budget', suivi_budget.View.as_view(), name='suivi_budget'),
@@ -61,4 +69,6 @@ urlpatterns = [
     # AJAX
     path('comptabilite/operations_tresorerie/get_form_ventilation', secure_ajax(operations_tresorerie.Get_form_ventilation), name='ajax_operations_tresorerie_form_ventilation'),
     path('comptabilite/operations_tresorerie/generer_pdf', secure_ajax(edition_justifs.Generer_pdf), name='ajax_comptabilite_generer_pdf'),
+    path('comptabilite/avances/regul/modification', secure_ajax(avances_regul.Exporter), name='exporter_avances'),
+
 ]

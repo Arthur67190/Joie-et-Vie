@@ -1,0 +1,26 @@
+{% extends "core/box_in_page.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load embed %}
+
+{% block scripts %}
+    {{ block.super }}
+{% endblock scripts %}
+
+{% block contenu_page %}
+{% embed 'core/box.html' %}
+    {% block box_theme %}card-outline card-red{% endblock %}
+    {% block box_titre %}Confirmation de suppression{% endblock %}
+    {% block box_introduction %}Vous êtes sur le point de supprimer la régularisation <strong>{{ regul_op.libelle }}</strong>. Cette action est irréversible.{% endblock %}
+
+    {% block box_contenu %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="text-center" style="margin-bottom: 20px;">
+                <button type="submit" class="btn btn-danger">Confirmer la suppression</button>
+                <a href="{% url 'operations_tresorerie_liste' %}" class="btn btn-secondary">Annuler</a>
+            </div>
+        </form>
+    {% endblock %}
+{% endembed %}
+{% endblock contenu_page %}

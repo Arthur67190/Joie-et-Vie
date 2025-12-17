@@ -11,10 +11,6 @@
                 {% block box_titre %}{{ box_titre }}{% endblock %}
                 {% block box_introduction %}{{ box_introduction|safe }}{% endblock %}
                 {% block box_contenu %}
-                    <div class="custom-control custom-checkbox custom-control-inline">
-                        <input type="checkbox" class="custom-control-input" id="id_check_attente" {% if afficher_renseignements_attente %}checked{% endif %}>
-                        <label class="custom-control-label" for="id_check_attente">Afficher toutes les modifications effectuées sur le portail.</label>
-                    </div>
                     {% embed 'core/crud/liste.html' %}
                     {% endembed %}
                 {% endblock box_contenu %}

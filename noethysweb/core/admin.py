@@ -38,7 +38,7 @@ class UserEditForm(UserChangeForm):
         queryset=Permission.objects.exclude(name__startswith='Can').order_by("name"), label="Permissions",
         widget=admin.widgets.FilteredSelectMultiple('permissions', False), required=False)
 
-    structures = forms.ModelMultipleChoiceField(
+    structures_admin = forms.ModelMultipleChoiceField(
         queryset=Structure.objects.all().order_by("nom"), label="Structures",
         widget=admin.widgets.FilteredSelectMultiple('structures', False), required=False)
 
@@ -61,7 +61,7 @@ class UtilisateurAdmin(UserAdmin):
         ('Informations personnelles', {'fields': ('first_name', 'last_name', 'email')}),
         ('Activation du compte', {'fields': ('is_active',)}),
         ('Permissions accordées', {'fields': ('is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Structures accessibles', {'fields': ('structures',), 'description': "Sélectionnez les structures accessibles par cet utilisateur."}),
+        ('Structures accessibles', {'fields': ('structures_admin',), 'description': "Sélectionnez les structures accessibles par cet utilisateur."}),
         ('Options', {'fields': ('adresse_exp', 'signature')}),
         ('Dates importantes', {'fields': ('last_login', 'date_joined')})
     )

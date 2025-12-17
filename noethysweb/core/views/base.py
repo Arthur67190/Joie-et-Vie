@@ -14,6 +14,11 @@ from core.views.menu import GetMenuPrincipal
 from core.models import Organisateur, Parametre, Utilisateur, PortailMessage, PortailRenseignement, Structure, Activite, Famille, Inscription
 from core.utils import utils_parametres
 from noethysweb.version import GetVersion
+from django.db.models import OuterRef, Subquery
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Max, F, Q
+
 
 def Memorise_option(request):
     """ Mémorise dans la DB et le cache une option d'interface pour l'utilisateur """
@@ -149,8 +154,53 @@ class CustomView(LoginRequiredMixin, UserPassesTestMixin): #, PermissionRequired
         if context['menu_actif'] is not None:
             context['breadcrumb'] = context['menu_actif'].GetBreadcrumb()
 
-        # Messages du portail non lus
-        context["liste_messages_non_lus"] = PortailMessage.objects.select_related("famille", "structure").filter(structure__in=self.request.user.structures.all(), utilisateur__isnull=True, date_lecture__isnull=True).order_by("date_creation")
+        # Date limite : 3 mois
+        date_limite = timezone.now() - timedelta(days=90)
+
+        # Messages non lus pour toutes les structures de l'utilisateur
+        messages_non_lus = PortailMessage.objects.filter(
+            structure__in=self.request.user.structures.all(),
+            utilisateur__isnull=True,
+            date_lecture__isnull=True
+        )
+
+        dernier_messages_non_lus_ids = (
+            messages_non_lus
+            .values('famille_id', 'structure_id')
+            .annotate(dernier_id=Max('idmessage'))
+            .values_list('dernier_id', flat=True)
+        )
+
+        # Obtenir les couples famille+structure ayant un message non lu
+        couples_non_lus = messages_non_lus.values_list('famille_id', 'structure_id')
+
+        # Dernier message par famille+structure dans les 3 derniers mois
+        dernier_messages = (
+            PortailMessage.objects
+            .filter(
+                structure__in=self.request.user.structures.all(),
+                date_creation__gte=date_limite
+            )
+            # Exclure les couples qui ont un message non lu
+            .exclude(
+                Q(famille_id__in=[f for f, s in couples_non_lus]) &
+                Q(structure_id__in=[s for f, s in couples_non_lus])
+            )
+            .values('famille_id', 'structure_id')
+            .annotate(dernier_id=Max('idmessage'))
+            .values_list('dernier_id', flat=True)
+        )
+
+        # Récupérer les objets complets
+        context["liste_messages_lus"] = PortailMessage.objects.filter(
+            idmessage__in=dernier_messages
+        ).select_related('famille', 'structure').order_by('-date_creation')
+
+        # Messages non lus
+        context["liste_messages_non_lus"] = PortailMessage.objects.filter(
+            idmessage__in=dernier_messages_non_lus_ids
+        ).select_related('famille', 'structure').order_by('-date_creation')
+
 
         # Filtrage
         structures = self.request.user.structures.all()

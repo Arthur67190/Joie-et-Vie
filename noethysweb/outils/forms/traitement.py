@@ -10,7 +10,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Hidden, Submit, HTML, Row, ButtonHolder, Fieldset
 from crispy_forms.bootstrap import Field, FormActions, PrependedText, StrictButton
 from core.utils.utils_commandes import Commandes
-from core.models import Traitement, Activite, Individu
+from core.models import Traitement, Activite, Individu, Inscription
 from core.widgets import Telephone, CodePostal, Ville
 from fiche_individu.widgets import CarteOSM
 
@@ -48,7 +48,10 @@ class Formulaire(FormulaireBase, ModelForm):
         self.helper.field_class = 'col-md-10'
 
         self.fields["activite"].queryset = Activite.objects.filter(structure__in=self.request.user.structures.all()).order_by("-date_fin")
-        self.fields['individu'].queryset = Individu.objects.filter(statut=5)
+        activites_accessibles = Activite.objects.filter(structure__in=self.request.user.structures.all())
+        inscriptions_accessibles = Inscription.objects.filter(activite__in=activites_accessibles)
+        individus_inscrits = Individu.objects.filter(idindividu__in=inscriptions_accessibles.values('individu'))
+        self.fields['individu'].queryset = Individu.objects.filter(idindividu__in=individus_inscrits)
 
         user = self.request.user.pk
         print(user)

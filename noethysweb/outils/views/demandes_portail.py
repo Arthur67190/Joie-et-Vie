@@ -234,9 +234,8 @@ def Get_labels():
 class Page(crud.Page):
     model = PortailRenseignement
     url_liste = "demandes_portail_liste"
-    description_liste = "Voici ci-dessous la liste des modifications effectuées sur le portail à lire ou à valider."
-    objet_singulier = "un renseignement à valider"
-    objet_pluriel = "des renseignements à valider"
+    description_liste = "Voici ci-dessous la liste des inscriptions en attentes effectuées sur le portail."
+
 
 
 class Liste(Page, crud.Liste):
@@ -282,20 +281,13 @@ class Liste(Page, crud.Liste):
 
         self.afficher_renseignements_attente = utils_parametres.Get(nom="afficher_renseignements_attente", categorie="renseignements_attente", utilisateur=self.request.user, valeur=False)
         conditions = Q()
-        if not self.afficher_renseignements_attente:
-            conditions &= Q(etat="ATTENTE")
-            conditions &= Q(code="inscrire_activite")
-            conditions &= Q(idrenseignement__in=resultat_filtre)
-            conditions &= Q(activite__in = activites_autorisees)
-            return PortailRenseignement.objects.select_related("famille", "individu", "traitement_utilisateur").filter(
+        conditions &= Q(etat="ATTENTE")
+        conditions &= Q(code="inscrire_activite")
+        conditions &= Q(idrenseignement__in=resultat_filtre)
+        conditions &= Q(activite__in = activites_autorisees)
+
+        return PortailRenseignement.objects.select_related("famille", "individu", "traitement_utilisateur").filter(
                 conditions).order_by("date")
-        else:
-            conditions &= ~Q(code="inscrire_activite")
-            conditions |= Q(idrenseignement__in=resultat_filtre)
-            conditions &= ~Q(etat="VALIDE")
-            conditions &= Q(individu__in=individus_inscrits)
-            conditions &= Q(activite__in = activites_autorisees)
-            return PortailRenseignement.objects.select_related("famille", "individu", "traitement_utilisateur").filter(conditions).order_by("date").exclude(code="inscrire_activite")
 
     def get_context_data(self, **kwargs):
         context = super(Liste, self).get_context_data(**kwargs)

@@ -90,20 +90,38 @@ class Liste(Page, crud.Liste):
         return context
 
     class datatable_class(MyDatatable):
-        filtres = ['date_debut', 'description', 'methode']
-        methode = columns.TextColumn("Méthode", sources=["methode"], processor='Get_methode')
+        filtres = ['description']
         actions = columns.TextColumn("Actions", sources=None, processor='Get_actions_speciales')
+        tarifs_lignes = columns.TextColumn("Montant(s)", sources=None, processor="Get_tarifs_lignes")
 
         class Meta:
             structure_template = MyDatatable.structure_template
-            columns = ['date_debut', 'description', 'methode']
+            columns = ['description', 'tarifs_lignes']
             processors = {
                 'date_debut': helpers.format_date('%d/%m/%Y'),
             }
             ordering = ['-date_debut']
 
-        def Get_methode(self, instance, *args, **kwargs):
-            return instance.get_methode_display()
+        def Get_tarifs_lignes(self, instance, *args, **kwargs):
+            qset = instance.tarifligne_set.all()
+
+            if not qset.exists():
+                return ""
+
+            def format_montant(m):
+                # supprime les zéros inutiles après la virgule
+                return f"{m:.2f}".rstrip("0").rstrip(".") + " €"
+
+            if qset.count() == 1:
+                ligne = qset.first()
+                return format_montant(ligne.montant_unique)
+
+            html = "<ul>"
+            for ligne in qset:
+                html += f"<li>{format_montant(ligne.montant_unique)}</li>"
+            html += "</ul>"
+
+            return html
 
         def Get_actions_speciales(self, instance, *args, **kwargs):
             """ Inclut l'idactivite dans les boutons d'actions """
