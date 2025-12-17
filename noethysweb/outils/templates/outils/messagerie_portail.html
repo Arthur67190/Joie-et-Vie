@@ -5,111 +5,222 @@
 
 {% block styles %}
     {{ block.super }}
+    <style>
+        .box-soustitre {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #000;
+            margin-bottom: 0.5rem;
+        }
+        .message-box {
+            padding: 0.5rem 1rem;
+        }
+    </style>
 {% endblock %}
 
 {% block contenu_page %}
 
-    <div class="row">
+<div class="row">
 
-        {# Liste des messages non lus #}
-        <div class="col-md-{% if famille %}3{% else %}12{% endif %}">
+    {# Colonne gauche : messages non lus + lus #}
+    <div class="col-md-4">
 
-            {% embed 'core/box.html' with box_titre=True %}
-                {% block box_theme %}card-outline card-lightblue{% endblock %}
-                {% block box_titre %}Messages non lus{% endblock %}
-                {% block card_body_classe %}p-0{% endblock %}
-                {% block box_contenu %}
-
-                    <div class="">
-                        {% for message in messagerie_liste_messages_non_lus %}
-                            <div class="p-2 {% if message.structure == structure and message.famille == famille %}bg-primary{% endif %}">
-                                <a href="{% url 'messagerie_portail' idfamille=message.famille_id idstructure=message.structure_id %}">
-                                    <div class="media">
-                                        <div class="media-body">
-                                            <h3 class="dropdown-item-title">
-                                                <i class="fa fa-envelope text-danger mr-1"></i> {{ message.famille.nom }}
-                                            </h3>
-                                            <p class="text-xs m-0">{{ message.texte|striptags|truncatechars:50 }}</p>
-                                            <p class="mt-1 m-0" style="font-size: 10px;"><i class="fa fa-clock-o mr-1"></i>{{ message.date_creation|timesince }} | <i class="fa fa-home mr-1"></i>{{ message.structure }}</p>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                            <div class="dropdown-divider m-0"></div>
-                        {% endfor %}
-                    </div>
-
-                {% endblock box_contenu %}
-            {% endembed %}
+        <div class="text-center mb-2">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#nouvelleConversationModal">
+                Nouvelle conversation
+            </button>
         </div>
 
-        {# Messagerie #}
+
+        {# Messages non lus #}
+        {% embed 'core/box.html' with box_titre=True %}
+            {% block box_theme %}card-outline card-lightblue{% endblock %}
+            {% block box_titre %}Messages non lus{% endblock %}
+            {% block box_soustitre %}<div class="box-soustitre">Derniers messages reçus</div>{% endblock %}
+            {% block card_body_classe %}p-0{% endblock %}
+            {% block box_contenu %}
+                {% for message in liste_messages_non_lus %}
+                    <div class="message-box {% if message.structure == structure and message.famille == famille %}bg-primary{% endif %}">
+                        <a href="{% url 'messagerie_portail' idfamille=message.famille_id idstructure=message.structure_id %}">
+                            <div class="media">
+                                <div class="media-body">
+                                    <h3 class="dropdown-item-title">
+                                        <i class="fa fa-envelope text-danger mr-1"></i> {{ message.famille.nom }}
+                                    </h3>
+                                    <p class="text-xs m-0">{{ message.texte|striptags|truncatechars:50 }}</p>
+                                    <p class="mt-1 m-0" style="font-size: 10px;">
+                                        <i class="fa fa-clock-o mr-1"></i>{{ message.date_creation|timesince }} |
+                                        <i class="fa fa-home mr-1"></i>{{ message.structure }}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="dropdown-divider m-0"></div>
+                {% empty %}
+                    <div class="p-2 text-success">Aucun message non lu</div>
+                {% endfor %}
+            {% endblock box_contenu %}
+        {% endembed %}
+
+        {# Messages lus #}
+        {% embed 'core/box.html' with box_titre=True %}
+            {% block box_theme %}card-outline card-lightblue{% endblock %}
+            {% block box_titre %}Conversations en cours{% endblock %}
+            {% block box_soustitre %}<div class="box-soustitre">Messages lus récemment</div>{% endblock %}
+            {% block card_body_classe %}p-0{% endblock %}
+            {% block box_contenu %}
+                {% for message in liste_messages_lus %}
+                    <div class="message-box {% if message.structure == structure and message.famille == famille %}bg-primary{% endif %}">
+                        <a href="{% url 'messagerie_portail' idfamille=message.famille_id idstructure=message.structure_id %}">
+                            <div class="media">
+                                <div class="media-body">
+                                    <h3 class="dropdown-item-title">
+                                        <i class="fa fa-envelope-open text-success mr-1"></i> {{ message.famille.nom }}
+                                    </h3>
+                                    <p class="text-xs m-0">{{ message.texte|striptags|truncatechars:50 }}</p>
+                                    <p class="mt-1 m-0" style="font-size: 10px;">
+                                        <i class="fa fa-clock-o mr-1"></i>{{ message.date_creation|timesince }} |
+                                        <i class="fa fa-home mr-1"></i>{{ message.structure }}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="dropdown-divider m-0"></div>
+                {% empty %}
+                    <div class="p-2 text-muted">Aucun message lu récent</div>
+                {% endfor %}
+            {% endblock box_contenu %}
+        {% endembed %}
+
+    </div>
+
+    {# Colonne droite : messagerie #}
+    <div class="col-md-8">
         {% if famille %}
-            <div class="col-md-9">
-
-                {% embed 'core/box.html' with box_titre=True box_conclusion=True %}
-                    {% block box_theme %}card-outline card-lightblue direct-chat direct-chat-primary{% endblock %}
-                    {% block box_titre %}
-                        Discussion avec la famille {{ famille.nom }} pour la structure {{ structure.nom }}
-                    {% endblock %}
-                    {% block box_contenu %}
-
-                        {% if not liste_messages_discussion %}
-                            <div style="padding:20px;">
-                                Aucun message récent.
-                            </div>
-                        {% else %}
-                            <div id="div_messages" class="direct-chat-messages" style="height: 300px; padding: 20px;">
-                                {% for message in liste_messages_discussion %}
-
-                                    {% if message.utilisateur %}
-
-                                        {# Si c'est un message de l'administrateur #}
-                                        <div class="direct-chat-msg right">
-                                            <div class="direct-chat-infos clearfix">
-                                                <span class="direct-chat-name float-right">{% firstof message.utilisateur.get_full_name message.utilisateur message.utilisateur.get_short_name %}</span>
-                                                <span class="direct-chat-timestamp float-left">{{ message.date_creation|date:"l j F Y H:i" }}</span>
-                                            </div>
-                                            <img class="direct-chat-img" src="{% static "images/user.png" %}">
-                                            <div class="direct-chat-text">
-                                                {{ message.texte|safe }}
-                                            </div>
+            {% embed 'core/box.html' with box_titre=True box_conclusion=True %}
+                {% block box_theme %}card-outline card-lightblue direct-chat direct-chat-primary{% endblock %}
+                {% block box_titre %}Discussion avec la famille {{ famille.nom }} pour la structure {{ structure.nom }}{% endblock %}
+                {% block box_contenu %}
+                    {% if not liste_messages_discussion %}
+                        <div style="padding:20px;">Aucun message récent.</div>
+                    {% else %}
+                        <div id="div_messages" class="direct-chat-messages" style="height: 400px; padding: 20px;">
+                            {% for message in liste_messages_discussion %}
+                                {% if message.utilisateur %}
+                                    <div class="direct-chat-msg right">
+                                        <div class="direct-chat-infos clearfix">
+                                            <span class="direct-chat-name float-right">{% firstof message.utilisateur.get_full_name message.utilisateur message.utilisateur.get_short_name %}</span>
+                                            <span class="direct-chat-timestamp float-left">{{ message.date_creation|date:"l j F Y H:i" }}</span>
                                         </div>
-
-                                    {% else %}
-
-                                        {# Si c'est un message de la famille #}
-                                        <div class="direct-chat-msg">
-                                            <div class="direct-chat-infos clearfix">
-                                                <span class="direct-chat-name float-left">{{ message.famille }}</span>
-                                                <span class="direct-chat-timestamp float-right">{{ message.date_creation|date:"l j F Y H:i" }}
-                                                    <span class="custom-switch custom-switch-off-danger custom-switch-on-success" title="Marquer comme lu">
-                                                        <input type="checkbox" class="custom-control-input case_switch" id="switch_{{ message.pk }}" data-idmessage="{{ message.pk }}" checked>
-                                                        <label class="custom-control-label" for="switch_{{ message.pk }}"></label>
-                                                    </span>
+                                        <img class="direct-chat-img" src="{% static "images/user.png" %}">
+                                        <div class="direct-chat-text">{{ message.texte|safe }}</div>
+                                    </div>
+                                {% else %}
+                                    <div class="direct-chat-msg">
+                                        <div class="direct-chat-infos clearfix">
+                                            <span class="direct-chat-name float-left">{{ message.famille }}</span>
+                                            <span class="direct-chat-timestamp float-right">
+                                                {{ message.date_creation|date:"l j F Y H:i" }}
+                                                <span class="custom-switch custom-switch-off-danger custom-switch-on-success" title="Marquer comme lu">
+                                                    <input type="checkbox" class="custom-control-input case_switch" id="switch_{{ message.pk }}" data-idmessage="{{ message.pk }}" {% if message.date_lecture %}checked{% endif %}>
+                                                    <label class="custom-control-label" for="switch_{{ message.pk }}"></label>
                                                 </span>
-                                                {% if not message.date_lecture %}<span class="badge bg-danger ml-md-2">Nouveau</span>{% endif %}
-                                            </div>
-                                            <img class="direct-chat-img" src="{% static "images/user.png" %}">
-                                            <div class="direct-chat-text">
-                                                {{ message.texte|safe }}
-                                            </div>
+                                            </span>
+                                            {% if not message.date_lecture %}<span class="badge bg-danger ml-md-2">Nouveau</span>{% endif %}
                                         </div>
+                                        <img class="direct-chat-img" src="{% static "images/user.png" %}">
+                                        <div class="direct-chat-text">{{ message.texte|safe }}</div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endblock box_contenu %}
+                {% block box_conclusion %}{% crispy form %}{% endblock %}
+            {% endembed %}
+        {% endif %}
+    </div>
 
-                                    {% endif %}
+        <!-- Modal -->
+        <div class="modal fade" id="nouvelleConversationModal" tabindex="-1" role="dialog" aria-labelledby="nouvelleConversationModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
 
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+              <div class="modal-header">
+                <h5 class="modal-title" id="nouvelleConversationModalLabel">Nouvelle conversation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fermer">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
 
-                    {% endblock box_contenu %}
-                    {% block box_conclusion %}
-                        {% crispy form %}
-                    {% endblock %}
-                {% endembed %}
+              <div class="modal-body">
+                <div class="form-group">
+                    <label for="selectFamille">Sélectionnez la famille</label>
+                    <select class="form-control" id="selectFamille">
+                        <option value="">-- Choisir une famille --</option>
+                        {% for famille in toutes_les_familles %}
+                            <option value="{{ famille.idfamille }}">{{ famille.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                <script>
-                    {# Scroll jusqu'en bas de la liste des messages #}
+                <div class="form-group">
+                    <label for="selectStructure">Sélectionnez la structure</label>
+                    <select class="form-control" id="selectStructure">
+                        <option value="">-- Choisir une structure --</option>
+                        {% for struct in structure_all %}
+                            <option value="{{ struct.idstructure }}">{{ struct.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Lien qui redirige -->
+                <a id="lienNouvelleConversation"
+                   class="btn btn-success btn-block disabled"
+                   href="#"
+                   style="pointer-events: none;"
+                   data-url="{% url 'messagerie_portail' idstructure=0 idfamille=0 %}">
+                   Ouvrir la conversation
+                </a>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+            <script>
+            const selectFamille = document.getElementById("selectFamille");
+            const selectStructure = document.getElementById("selectStructure");
+            const lien = document.getElementById("lienNouvelleConversation");
+
+            function updateLien() {
+                const idfamille = selectFamille.value;
+                const idstructure = selectStructure.value;
+
+            if(idfamille && idstructure){
+                    // On prend l'URL modèle depuis data-url
+                    let urlTemplate = lien.dataset.url;
+                    // Remplace le 0/0 par les vraies valeurs
+                    let urlFinale = urlTemplate.replace(/0\/0/, `${idstructure}/${idfamille}`);
+                    lien.href = urlFinale;
+                    lien.classList.remove("disabled");
+                    lien.style.pointerEvents = "auto";
+                    console.log("Lien activé :", lien.href);
+                } else {
+                    lien.href = "#";
+                    lien.classList.add("disabled");
+                    lien.style.pointerEvents = "none";
+                    console.log("Lien désactivé");
+                }
+            }
+
+            selectFamille.addEventListener("change", updateLien);
+            selectStructure.addEventListener("change", updateLien);
+
+                {# Scroll jusqu'en bas de la liste des messages #}
                     $("#div_messages").scrollTop($("#div_messages").get(0).scrollHeight);
 
                     $(document).ready(function() {
@@ -125,6 +236,10 @@
                                 datatype: "json",
                                 success: function(data){
                                     toastr.success("Modification du message effectuée");
+                                    const lien = document.getElementById("lienNouvelleConversation");
+                                    const url = lien.getAttribute("data-url");
+                                    window.location.href = url;
+
                                 },
                                 error: function(data) {
                                     toastr.error(data.responseJSON.erreur);
@@ -132,11 +247,12 @@
                             })
                         })
                     })
-                </script>
+            </script>
 
-            </div>
-        {% endif %}
 
-    </div>
+
+</div>
 
 {% endblock contenu_page %}
+
+

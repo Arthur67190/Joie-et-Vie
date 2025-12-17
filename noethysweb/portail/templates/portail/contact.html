@@ -4,78 +4,101 @@
 {% load static %}
 {% load embed %}
 
-
 {% block styles %}
-    {{ block.super }}
+{{ block.super }} <style>
+.box-soustitre {
+font-family: Arial, sans-serif;
+font-weight: bold;
+font-size: 1.2rem;
+color: #000;
+margin-bottom: 0.5rem;
+}
+.message-box {
+padding: 0.5rem 1rem;
+}
+.message-title i {
+margin-right: 5px;
+font-size: 1.4rem;
+font-weight: bold;
+}
+.message-preview {
+font-size: 0.9rem;
+margin: 0;
+}
+.message-meta {
+font-size: 0.75rem;
+color: #6c757d;
+} </style>
 {% endblock %}
 
 {% block contenu_page %}
 
-    {# Texte d'introduction #}
-    {% if parametres_portail.contact_intro %}
-        <div style="margin-bottom: 20px;">
-            <i class="fa fa-info-circle margin-r-5"></i>{{ parametres_portail.contact_intro }}
-        </div>
-    {% endif %}
+<div class="row">
+    <div class="col-md-12">
 
-    {# Messagerie #}
-    {% embed 'core/box.html' with box_titre=True box_introduction=True %}
+    <div class="text-center mb-4">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#nouvelleConversationModal">
+            Nouvelle conversation
+        </button>
+    </div>
+
+    {# Messages non lus #}
+    {% embed 'core/box.html' with box_titre=True %}
         {% block box_theme %}card-outline card-lightblue{% endblock %}
-        {% block box_titre %}Messagerie{% endblock %}
-        {% block box_introduction %}{% blocktrans %}Cliquez ci-dessous sur la structure ou le service avec lequel vous souhaitez converser{% endblocktrans %}.{% endblock %}
+        {% block box_titre %}Messages non lus{% endblock %}
+        {% block box_soustitre %}<div class="box-soustitre">Derniers messages reçus</div>{% endblock %}
+        {% block card_body_classe %}p-0{% endblock %}
         {% block box_contenu %}
-            {% for structure in liste_structures_messagerie %}
-
-                {% with dict_messages_non_lus|get_item:structure.pk as nbre_messages_non_lus %}
-                <a class="btn btn-app" href="{% url 'portail_messagerie' idstructure=structure.pk %}">
-                    {% if nbre_messages_non_lus %}
-                        <span class="badge bg-danger">{{ nbre_messages_non_lus }} {% if nbre_messages_non_lus == 1 %}{% blocktrans %}non lu{% endblocktrans %}{% else %}{% blocktrans %}non lus{% endblocktrans %}{% endif %}</span>
-                    {% endif %}
-                    <i class="fa fa-comments"></i>{{ structure.nom }}
-                </a>
-                {% endwith %}
-
-            {% endfor %}
+            {% if liste_messages_non_lus %}
+                {% for message in liste_messages_non_lus %}
+                    <div class="message-box {% if message.structure == structure %}bg-primary{% endif %}">
+                        <a href="{% url 'portail_messagerie' idstructure=message.structure_id %}">
+                            <div class="message-title">
+                                <i class="fa fa-envelope text-danger"></i> <strong>{{ message.structure.nom }}</strong>
+                            </div>
+                            <p class="message-preview">{{ message.texte|striptags|truncatechars:50 }}</p>
+                            <p class="message-meta">
+                                <i class="fa fa-clock-o"></i> {{ message.date_creation|timesince }}
+                            </p>
+                        </a>
+                    </div>
+                    <hr class="m-0">
+                {% endfor %}
+            {% else %}
+                <div class="p-2 text-success">Aucun message non lu</div>
+            {% endif %}
         {% endblock box_contenu %}
-        {% block box_conclusion %}{{ box_conclusion|safe }}{% endblock %}
     {% endembed %}
 
+    {# Messages lus #}
+    {% embed 'core/box.html' with box_titre=True %}
+        {% block box_theme %}card-outline card-lightblue{% endblock %}
+        {% block box_titre %}Conversations en cours{% endblock %}
+        {% block box_soustitre %}<div class="box-soustitre">Messages lus récemment</div>{% endblock %}
+        {% block card_body_classe %}p-0{% endblock %}
+        {% block box_contenu %}
+            {% if liste_messages_lus %}
+                {% for message in liste_messages_lus %}
+                    <div class="message-box {% if message.structure == structure %}bg-primary{% endif %}">
+                        <a href="{% url 'portail_messagerie' idstructure=message.structure_id %}">
+                            <div class="message-title">
+                                <i class="fa fa-envelope-open text-success"></i> <strong>{{ message.structure.nom }}</strong>
+                            </div>
+                            <p class="message-preview">{{ message.texte|striptags|truncatechars:50 }}</p>
+                            <p class="message-meta">
+                                <i class="fa fa-clock-o"></i> {{ message.date_creation|timesince }}
+                            </p>
+                        </a>
+                    </div>
+                    <hr class="m-0">
+                {% endfor %}
+            {% else %}
+                <div class="p-2 text-muted">Aucun message lu récent</div>
+            {% endif %}
+        {% endblock box_contenu %}
+    {% endembed %}
 
-    {# Coordonnées des structures #}
-    {% if parametres_portail.contact_afficher_coords_structures %}
-        {% embed 'core/box.html' with box_titre=True box_introduction=False %}
-            {% block box_theme %}card-outline card-lightblue{% endblock %}
-            {% block box_titre %}{% blocktrans %}Annuaire des structures ou services{% endblocktrans %}{% endblock %}
-            {% block box_contenu %}
-                <div class="row">
-                    {% for structure in liste_structures_coords %}
-                        <div class="col-md-4 pl-3 pr-3 pb-3 pt-1">
-                            <div><strong>{{ structure.nom }}</strong></div>
-                            {% if structure.rue or structure.cp or structure.ville %}<div><i class='fa fa-map-marker margin-r-5'></i>{{ structure.rue }} {{ structure.cp }} {{ structure.ville }}</div>{% endif %}
-                            {% if structure.tel %}<div><i class='fa fa-phone margin-r-5'></i>{{ structure.tel }}</div>{% endif %}
-                            {% if structure.site %}<div><i class='fa fa-globe margin-r-5'></i><a href="http://{{ structure.site }}" target="_blank">{{ structure.site }}</a></div>{% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endblock box_contenu %}
-        {% endembed %}
-    {% endif %}
-
-
-    {# Coordonnées de l'organisateur #}
-    {% if parametres_portail.contact_afficher_coords_organisateur %}
-        {% embed 'core/box.html' with box_titre=True box_introduction=False %}
-            {% block box_theme %}card-outline card-lightblue{% endblock %}
-            {% block box_titre %}{% blocktrans %}Coordonnées de l'organisateur{% endblocktrans %}{% endblock %}
-            {% block box_contenu %}
-                <div class="m-2">
-                    <div><strong>{{ organisateur.nom }}</strong></div>
-                    {% if organisateur.rue or organisateur.cp or organisateur.ville %}<div><i class='fa fa-map-marker margin-r-5'></i>{{ organisateur.rue }} {{ organisateur.cp }} {{ organisateur.ville }}</div>{% endif %}
-                    {% if organisateur.tel %}<div><i class='fa fa-phone margin-r-5'></i>{{ organisateur.tel }}</div>{% endif %}
-                    {% if organisateur.site %}<div><i class='fa fa-globe margin-r-5'></i><a href="http://{{ organisateur.site }}" target="_blank">{{ organisateur.site }}</a></div>{% endif %}
-                </div>
-            {% endblock box_contenu %}
-        {% endembed %}
-    {% endif %}
+</div>
+</div>
 
 {% endblock contenu_page %}

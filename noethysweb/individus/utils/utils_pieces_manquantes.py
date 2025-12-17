@@ -165,6 +165,8 @@ def Get_liste_pieces_necessaires(date_reference=None, activite=None, famille=Non
             dict_pieces.setdefault(key, [])
             dict_pieces[key].append(piece)
 
+    print(dict_pieces)
+
     liste_pieces_necessaires = []
     for type_piece in activite.pieces.all():
         # Vérifie si la pièce existe
@@ -180,5 +182,7 @@ def Get_liste_pieces_necessaires(date_reference=None, activite=None, famille=Non
                     valide = True
 
         liste_pieces_necessaires.append({"type_piece": type_piece, "valide": valide, "document": type_piece.type_piece_document.first()})
+
+    print(liste_pieces_necessaires)
 
     return liste_pieces_necessaires

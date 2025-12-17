@@ -93,19 +93,42 @@ class Formulaire(FormulaireBase, ModelForm):
             Field('texte_aide'),
             Field('structure'),
             Field('activite'),
-            Field('visible'),
-            Field('visible_portail'),
-            Field('visible_fiche_renseignement'),
+            Hidden('visible', value=True),
+            Hidden('visible_portail', value=True),
+            Hidden('visible_fiche_renseignement', value=True),
             HTML(EXTRA_SCRIPT),
         )
 
     def clean(self):
-        # Individu
-        if self.cleaned_data["controle"] in ("liste_deroulante", "liste_coches") and not self.cleaned_data["choix"]:
-            self.add_error("choix", "Vous devez saisir au moins un choix")
-            return
+        cleaned_data = super().clean()
 
-        return self.cleaned_data
+        # Vérification obligatoire de structure
+        structure = cleaned_data.get("structure")
+        if not structure:
+            self.add_error("structure", "Vous devez sélectionner une structure.")
+
+        choix = cleaned_data.get("choix", "")
+        controle = cleaned_data.get("controle")
+
+        # On applique uniquement pour les champs à choix
+        if controle in ("liste_deroulante", "liste_coches"):
+            # On transforme None en chaîne vide
+            choix = choix or ""
+
+            # On découpe proprement
+            liste = [c.strip() for c in choix.split(";") if c.strip()]
+
+            # On ajoute RAS s’il n’y est pas déjà
+            if "RAS" not in liste:
+                liste.append("RAS")
+
+            # On recompose la chaîne propre
+            cleaned_data["choix"] = ";".join(liste)
+
+        if controle == "liste_coches_ouinon":
+            cleaned_data["choix"] = "OUI;NON"
+
+        return cleaned_data
 
 
 

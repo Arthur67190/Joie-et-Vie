@@ -98,6 +98,7 @@
                             <tr class="text-center">
                                 <th>Individu à inscrire</th>
                                 <th>Activité souhaitée</th>
+
                             </tr>
                         </thead>
                         <tbody>
@@ -105,6 +106,12 @@
                                 <tr class="text-center">
                                     <td>{{ demande.individu.prenom }}</td>
                                     <td>{{ demande.nom_activite }}</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-circle btn-sm"
+                                                onclick="traiter_demande({{ demande.pk }}, 'REFUS')"
+                                                title="Annuler la demande"> Annuler la demande
+                                        </button>
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -116,3 +123,38 @@
     {% endif %}
 
 {% endblock contenu_page %}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+
+        function traiter_demande(iddemande, etat) {
+            // Modifie la donnée
+            $.ajax({
+                type: "POST",
+                url: "{% url 'ajax_annulation_portail' %}",
+                data: {
+                    "iddemande": iddemande,
+                    "etat": etat,
+                    "csrfmiddlewaretoken": "{{ csrf_token }}",
+                },
+                datatype: "json",
+                success: function(data){
+                    if (data.redirection) {
+                        // Redirection
+                        window.location.href = data.redirection;
+                    } else {
+                        // Recharge la liste
+                        var table = $('.datatable').DataTable()
+                        table.ajax.reload(null, false);
+                    }
+                },
+                error: function(data) {
+                    toastr.error("Erreur");
+                }
+            })
+        };
+
+    </script>
+{% endblock scripts %}

@@ -59,7 +59,7 @@
         <form id="form_recherche1" action="{% url 'rechercher' %}" method="GET" class="form-inline ml-3" role="search">
             {% csrf_token %}
             <div class="input-group input-group-sm">
-                <input id="form-control form-control-navbar" type="text" title="Recherchez une commande, un individu, une famille, un payeur, une adresse..." name="champ_recherche" class="form-control form-control-navbar champ-recherche" placeholder="Rechercher...">
+                <input id="form-control form-control-navbar" type="text" title="Recherchez une commande, un individu, une famille, un payeur, une adresse..." name="champ_recherche" class="form-control form-control-navbar champ-recherche" placeholder="Rechercher un menu, une famille, ...">
                 <div class="input-group-append">
                     <button class="btn btn-navbar" type="submit">
                         <i class="fa fa-search"></i>
@@ -69,7 +69,7 @@
         </form>
 {% endcomment %}
 
-            {# Historique des recherches #}
+<!--            {# Historique des recherches #}
             <li class="nav-item dropdown">
                 <a href="#" class="nav-link" data-toggle="dropdown" title="Historique des recherches"><i class="fa fa-history"></i></a>
                 <ul class="dropdown-menu" role="menu">
@@ -81,38 +81,38 @@
                     <li class="dropdown-divider"></li>
                     <li class="dropdown-item"><a href="{% url 'demandes_portail_liste' %}">Ouvrir l'historique complet</a></li>
                 </ul>
-            </li>
+            </li>-->
 
             {# Actions rapides #}
             <li class="nav-item dropdown">
                 <a href="#" class="nav-link" data-toggle="dropdown" title="Actions rapides"><i class="fa fa-star-o"></i></a>
                 <ul class="dropdown-menu" role="menu">
-                    {% if perms.core.famille_liste %}
-                        <h6 class="dropdown-header"><strong>Individus</strong></h6>
-                        <li class="dropdown-item"><a href="{% url 'famille_ajouter' %}">Ajouter une famille</a></li>
-                        <li class="dropdown-item"><a href="{% url 'inscriptions_activite_liste' %}">Liste des inscriptions</a></li>
-                    {% endif %}
-                    {% if perms.core.factures_generation or perms.core.rappels_generation %}
+                        <h6 class="dropdown-header"><strong>Finances</strong></h6>
+                        <li class="dropdown-item"><a href="{% url 'ajouter_reglement_familles' %}">Ajouter un règlement</a></li>
+                        <li class="dropdown-item"><a href="{% url 'ajouter_deduction_familles' %}">Ajouter une déduction</a></li>
                         <li class="dropdown-divider"></li>
-                        <h6 class="dropdown-header"><strong>Facturation</strong></h6>
-                        {% if perms.core.liste_prestations %}<li class="dropdown-item"><a href="{% url 'liste_prestations' %}">Liste des prestations</a></li>{% endif %}
-                        {% if perms.core.factures_generation %}<li class="dropdown-item"><a href="{% url 'factures_generation' %}">Générer des factures</a></li>{% endif %}
-                        {% if perms.core.rappels_generation %}<li class="dropdown-item"><a href="{% url 'rappels_generation' %}">Générer des lettres de rappel</a></li>{% endif %}
-                    {% endif %}
+                        <h6 class="dropdown-header"><strong>Individus</strong></h6>
+                        {% if perms.core.liste_prestations %}<li class="dropdown-item"><a href="{% url 'edition_renseignements' %}">PDF des renseignements</a></li>{% endif %}
                 </ul>
             </li>
 
 
             {# Messagerie #}
-            {% if liste_messages_non_lus %}
                 <li class="nav-item dropdown">
 
-                    <a class="nav-link" data-toggle="dropdown" href="#" title="Vous avez {{ liste_messages_non_lus|length }} message{{ liste_messages_non_lus|length|pluralize }}">
-                        <i class="fa fa-comments"></i>
-                        <span class="badge badge-danger navbar-badge">{{ liste_messages_non_lus|length }}</span>
+                    <a class="nav-link" data-toggle="dropdown" href="#"
+                       title="Vous avez {{ liste_messages_non_lus|length }} message{{ liste_messages_non_lus|length|pluralize }}">
+                        <i class="fa fa-comments "></i>
+                        {% if liste_messages_non_lus|length > 0 %}
+                            <span class="badge badge-danger navbar-badge" style="position: relative; top: -5px; left: -2px;"> {{ liste_messages_non_lus|length }}</span>
+                        {% endif %}
                     </a>
 
                     <div class="dropdown-menu dropdown-menu-xl dropdown-menu-left">
+                        <a href="{% url 'messagerie_portail' %}" class="dropdown-item dropdown-footer">
+                            <strong>Accéder à la messagerie</strong>
+                        </a>
+                        <div class="dropdown-divider"></div>
                         <span class="dropdown-item dropdown-header text-center">{{ liste_messages_non_lus|length }} nouveau{{ liste_messages_non_lus|length|pluralize:"x" }} message{{ liste_messages_non_lus|length|pluralize }}</span>
                         <div class="dropdown-divider"></div>
 
@@ -131,37 +131,40 @@
                             <div class="dropdown-divider"></div>
                         {% endfor %}
 
-                        <a href="{% url 'messagerie_portail' %}" class="dropdown-item dropdown-footer">
-                            Voir tous les nouveaux messages
-                        </a>
+                        <span class="dropdown-item dropdown-header text-center">{{ liste_messages_lus|length }} conversation{{ liste_messages_lus|length|pluralize:"s" }} en cours </span>
+                        <div class="dropdown-divider"></div>
 
-                    </div>
+                        {% for message in liste_messages_lus %}
+                            <a href="{% url 'messagerie_portail' idfamille=message.famille_id idstructure=message.structure_id %}" class="dropdown-item" title="{{ message.texte|striptags }}">
+                                <div class="media">
+                                    <div class="media-body">
+                                        <h3 class="dropdown-item-title">
+                                            <i class="fa fa-envelope-open text-success mr-1"></i> {{ message.famille.nom }}
+                                        </h3>
+                                        <p class="text-xs">{{ message.texte|striptags|truncatechars:55 }}</p>
+                                        <p class="mt-1 text-muted" style="font-size: 10px;"><i class="fa fa-clock-o mr-1"></i>{{ message.date_creation|timesince }} | <i class="fa fa-home mr-1"></i>{{ message.structure }}</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <div class="dropdown-divider"></div>
+                        {% endfor %}
+
+
+                    </>
                 </li>
-            {% endif %}
-
-            {% if perms.core.demandes_portail_liste %}
 
                 {# Renseignements à valider #}
                 {% if nbre_renseignements_attente_validation %}
                     <li class="nav-item dropdown">
                         <a class="nav-link" href="{% url 'demandes_portail_liste' %}" title="Vous avez {{ nbre_renseignements_attente_validation }} renseignement{{ nbre_renseignements_attente_validation|pluralize }} à valider">
                             <i class="fa fa-thumbs-up"></i>
-                            <span class="badge badge-warning navbar-badge">{{ nbre_renseignements_attente_validation }}</span>
+                            <span class="badge badge-warning navbar-badge" style="position: relative; top: -5px; left: -2px;">
+                                {{ nbre_renseignements_attente_validation }}
+                            </span>
                         </a>
                     </li>
                 {% endif %}
 
-                {# Renseignements à lire #}
-                {% if nbre_renseignements_attente_lecture %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link" href="{% url 'demandes_portail_liste' %}" title="Vous avez {{ nbre_renseignements_attente_lecture }} renseignement{{ nbre_renseignements_attente_lecture|pluralize }} à lire">
-                            <i class="fa fa-eye"></i>
-                            <span class="badge badge-warning navbar-badge">{{ nbre_renseignements_attente_lecture }}</span>
-                        </a>
-                    </li>
-                {% endif %}
-
-            {% endif %}
 
         </ul>
 
@@ -192,7 +195,31 @@
                             <small>Utilisateur depuis {{ request.user.date_joined|date:"j F Y" }}</small>
                         </p>
                     </li>
+                    <!-- Formulaire structures -->
+                    <li class="user-footer">
+                        <h5 class="dropdown-header text-center">Structures actives</h5>
+                        <form id="form_structures" method="post" action="{% url 'profil_utilisateur' %}">
+                            {% csrf_token %}
+                            <div class="btn-group-toggle d-flex flex-wrap" data-toggle="buttons">
+                                {% for structure in request.user.structures_admin.all %}
+                                    <label class="btn btn-outline-primary m-1 {% if structure in request.user.structures.all %}active{% endif %}">
+                                        <input type="checkbox" name="structures" value="{{ structure.idstructure }}" autocomplete="off"
+                                            {% if structure in request.user.structures.all %}checked{% endif %}>
+                                        {{ structure }}
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        </form>
+                    </li>
 
+                    <script>
+                        // Envoie automatiquement le formulaire dès qu'un checkbox est cliqué
+                        document.querySelectorAll('#form_structures input[type=checkbox]').forEach(function(checkbox){
+                            checkbox.addEventListener('change', function(){
+                                this.closest('form').submit();
+                            });
+                        });
+                    </script>
                     <!-- Menu Footer-->
                     <li class="user-footer">
                         <div class="pull-left">

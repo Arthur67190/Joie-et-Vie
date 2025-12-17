@@ -93,9 +93,29 @@
 
                 </div>
             </div>
-
+             <!-- Card Soldes Hors Bilan -->
+            <div class="card card-default mt-3">
+                <div class="card-header with-border">
+                    <h3 class="card-title"><i class="fa fa-file-text-o margin-r-5"></i> Catégorie hors bilan</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Réduire"><i class="fa fa-minus"></i></button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if soldes_hors_bilan %}
+                        <ul class="list-unstyled mb-0">
+                            {% for nom, montant, type in soldes_hors_bilan %}
+                                <li>({{ type}}) {{ nom }} : {{ montant|floatformat:2 }} € </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>Aucune catégorie hors bilan</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
+
 
     {% include 'core/widgets/bootstrap-table.html' %}
 

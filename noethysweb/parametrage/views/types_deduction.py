@@ -31,8 +31,11 @@ class Liste(Page, crud.Liste):
     model = TypeDeduction
 
     def get_queryset(self):
-        return TypeDeduction.objects.filter(self.Get_filtres("Q")).annotate(nbre_individus=Count('idtype_deduction'))
-
+        return TypeDeduction.objects.filter(
+            self.Get_filtres("Q")
+        ).annotate(
+            nbre_individus=Count('deduction')
+        )
     def get_context_data(self, **kwargs):
         context = super(Liste, self).get_context_data(**kwargs)
         context['impression_introduction'] = ""
@@ -60,6 +63,4 @@ class Modifier(Page, crud.Modifier):
     form_class = Formulaire
 
 class Supprimer(Page, crud.Supprimer):
-    manytomany_associes = [
-        ("individu(s)", "individu_deductions"),
-    ]
+    form_class = Formulaire

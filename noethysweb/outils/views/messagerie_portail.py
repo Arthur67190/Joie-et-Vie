@@ -9,8 +9,12 @@ from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.template.defaultfilters import truncatechars, striptags
 from core.views import crud
-from core.models import PortailMessage, Structure, Famille
+from core.models import PortailMessage, Structure, Famille, Activite, Inscription, Individu
 from outils.forms.messagerie_portail import Formulaire, Envoi_notification_message
+from django.db.models import OuterRef, Subquery
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Max, F, Q
 
 
 def Marquer_lu(request):
@@ -32,19 +36,36 @@ class Page(crud.Page):
     def get_context_data(self, **kwargs):
         context = super(Page, self).get_context_data(**kwargs)
         context['page_titre'] = "Messagerie"
+
         liste_messages_discussion = PortailMessage.objects.select_related("famille", "structure", "utilisateur").filter(famille_id=self.get_idfamille(), structure_id=self.get_idstructure()).order_by("date_creation")
         context['liste_messages_discussion'] = list(liste_messages_discussion)
-        messages_non_lus = PortailMessage.objects.select_related("famille", "structure").filter(utilisateur__isnull=True, date_lecture__isnull=True)
-        context['messagerie_liste_messages_non_lus'] = list(messages_non_lus)
+        messages_non_lus = context.get("liste_messages_non_lus", [])
+        messages_lus = context.get("liste_messages_lus", [])
+        context['liste_messages_non_lus'] = messages_non_lus
+        context['liste_messages_lus'] = messages_lus
+
 
         if self.get_idstructure():
             context["structure"] = Structure.objects.get(pk=self.get_idstructure())
+
+        context["structure_all"] = self.request.user.structures.all()
+
+
         if self.get_idfamille():
             context["famille"] = Famille.objects.get(pk=self.get_idfamille())
 
         # Indiquer que les messages de la discussion ouverte sont lus
         if messages_non_lus and self.get_idfamille():
-            messages_non_lus.filter(famille_id=self.get_idfamille()).update(date_lecture=datetime.datetime.now())
+            messages_non_lus.filter(famille_id=self.get_idfamille(), structure_id=self.get_idstructure()).update(date_lecture=datetime.datetime.now())
+
+        # Envoi famille
+        activites_accessibles = Activite.objects.filter(structure__in=self.request.user.structures.all())
+        inscriptions_accessibles = Inscription.objects.filter(activite__in=activites_accessibles)
+        individus_inscrits = Individu.objects.filter(idindividu__in=inscriptions_accessibles.values('individu'))
+        famille_inscrite = Famille.objects.filter(idfamille__in=inscriptions_accessibles.values('famille')).order_by('nom')
+
+        context['toutes_les_familles'] = famille_inscrite
+
         return context
 
     def get_form_kwargs(self, **kwargs):

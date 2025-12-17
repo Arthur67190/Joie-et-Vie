@@ -1,3 +1,26 @@
+Version 1.3.5.5.105 (02/12/2025)
+- bug déductions
+- Ajout compte dans bilan compta
+- Filtre structure par le directeur dans le profil
+- V1 avances
+
+Version 1.3.5.5.104 (25/11/2025)
+- Bug procédure
+- bug traitement
+- bug utils-email
+- Messagerie au top !!
+- Choix Oui/non questionnaire
+- alerte activité incomplète
+- bouton redirection config. type pièce
+- bug pièces lors de l'inscription
+- bug affichage inscriptions en attentes
+- Suppression header des notifs et améliorations
+- suppression compta avec suppression reglement
+- Message alerte règlement
+- Annulation d'une demande d'inscription par les parents
+- Article clicable quand il y a un album
+
+
 Version 1.3.5.5.103 (19/11/2025)
 - Ajout doc. compta + export fichier compta
 

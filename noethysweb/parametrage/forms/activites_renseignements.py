@@ -13,6 +13,8 @@ from core.utils.utils_commandes import Commandes
 from core.models import Activite, TypePiece, TypeCotisation, TypeConsentement
 from core.forms.select2 import Select2MultipleWidget
 from django.db.models import Q
+from django.urls import reverse
+from crispy_forms.layout import HTML
 
 
 class Formulaire(FormulaireBase, ModelForm):
@@ -44,12 +46,26 @@ class Formulaire(FormulaireBase, ModelForm):
         else:
             commandes = Commandes(annuler_url="{% url 'activites_renseignements' idactivite=activite.idactivite %}", ajouter=False)
 
+        config_url = reverse("types_pieces_ajouter")  # ou utilisez reverse("nom_de_la_vue")
+        config_bouton = HTML(f'''
+            <div class="form-group row">
+                <div class="col-md-10 offset-md-2">
+                    <a href="{config_url}" class="btn btn-warning" target="_blank">
+                        <i class="fa fa-cog"></i> Configuration d'une nouvelle pièce
+                    </a>
+                </div>
+            </div>
+        ''')
+
         # Affichage
         self.helper.layout = Layout(
             commandes,
+
             Fieldset("Pièces à fournir par la famille",
                 Field("pieces"),
-            ),
+                     config_bouton,
+
+                     ),
             #Fieldset("Adhésions à jour",
             #    Field("cotisations"),
             #),

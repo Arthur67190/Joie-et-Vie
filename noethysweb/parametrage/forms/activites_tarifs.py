@@ -4,6 +4,7 @@
 #  Distribué sous licence GNU GPL.
 
 from django import forms
+import json, datetime
 from django.forms import ModelForm, HiddenInput
 from core.forms.base import FormulaireBase
 from django.forms.models import inlineformset_factory, BaseInlineFormSet
@@ -354,21 +355,15 @@ class Formulaire(FormulaireBase, ModelForm):
             Hidden('activite', value=activite.idactivite),
             Hidden('nom_tarif', value=nom_tarif),
             Hidden('categories_tarifs', value=initial_category),
-            TabHolder(
-                Tab("Généralités",
-                    Field("date_debut"),
+                            Fieldset("Généralités",
+                    Hidden("date_debut", value = datetime.date.today()),
                     Field("description"),
                     Field("visible"),
-               Tab("Type de tarif",
                    Hidden("type", value="FORFAIT"),
-                    ),
                ),
-                Tab("Calcul du tarif",
-                    Field("methode"),
+                    Field("methode", value=methode),
                     Hidden("tarifs_lignes_data", value='', id='tarifs_lignes_data'),
                     Field("parametres_tarif"),
-                ),
-            ),
             HTML(EXTRA_SCRIPT),
         )
 

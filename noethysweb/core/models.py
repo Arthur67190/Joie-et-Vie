@@ -65,7 +65,7 @@ LISTE_METHODES_TARIFS = [
     #{ "code": "duree_montant_unique", "label":u"Montant unique en fonction d'une durée", "type": "horaire", "nbre_lignes_max": None, "entete": None, "champs": ("duree_min", "duree_max", "temps_facture", "montant_unique", "montant_questionnaire", "label"), "champs_obligatoires": ("duree_min", "duree_max", "montant_unique"), "tarifs_compatibles": ("JOURN",) },
     #{ "code": "duree_qf", "label":u"En fonction d'une durée et du quotient familial", "type": "horaire", "nbre_lignes_max": None, "entete": None, "champs": ("qf_min", "qf_max", "duree_min", "duree_max", "temps_facture", "montant_unique", "label"), "champs_obligatoires": ("qf_min", "qf_max", "duree_min", "duree_max", "montant_unique"), "tarifs_compatibles": ("JOURN",) },
 
-    { "code": "montant_unique_date", "label":u"Montant unique en fonction de la date", "type": "unitaire", "nbre_lignes_max": None, "entete": None, "champs": ("date", "montant_unique", "label"), "champs_obligatoires": ("date", "montant_unique"), "tarifs_compatibles": ("JOURN",) },
+    { "code": "montant_unique_date", "label":u"Montant unique en fonction de la date", "type": "unitaire", "nbre_lignes_max": None, "entete": None, "champs": ("date", "montant_unique"), "champs_obligatoires": ("date", "montant_unique"), "tarifs_compatibles": ("JOURN",) },
     #{ "code": "qf_date", "label":u"En fonction de la date et du quotient familial", "type": "unitaire", "nbre_lignes_max": None, "entete": None, "champs": ("date", "qf_min", "qf_max", "montant_unique", "label"), "champs_obligatoires": ("date", "qf_min", "qf_max", "montant_unique"), "tarifs_compatibles": ("JOURN",) },
 
     # { "code": "variable", "label":u"Tarif libre (Saisi par l'utilisateur)"), "type": "unitaire", "nbre_lignes_max": 0, "entete": None, "champs": (), "champs_obligatoires": (), "tarifs_compatibles": ("JOURN",) },
@@ -173,7 +173,8 @@ LISTE_CONTROLES_QUESTIONNAIRES = [
     {"code": "montant", "label":u"Montant", "image": "Euro.png", "filtre": "montant" },
     {"code": "liste_deroulante", "label":u"Liste déroulante", "image": "Ctrl_choice.png", "options":{"choix":None}, "filtre": "choix" },
     {"code": "liste_coches", "label":u"Sélection multiple", "image": "Coches.png", "options": {"hauteur":-1, "choix":None} , "filtre": "choix"},
-    {"code": "case_coche", "label":u"Case unique à cocher", "image": "Ctrl_coche.png" , "filtre": "coche"},
+    {"code": "liste_coches_ouinon", "label": u"Sélection OUI/NON", "image": "Coches.png", "options": {"hauteur": -1, "choix": None}, "filtre": "choix"},
+    #{"code": "case_coche", "label":u"Case unique à cocher", "image": "Ctrl_coche.png" , "filtre": "coche"},
     {"code": "date", "label":u"Date", "image": "Jour.png" , "filtre": "date"},
     #{"code": "slider", "label":u"Réglette", "image": "Reglette.png", "options": {"hauteur":-1, "min":0, "max":100}, "filtre": "entier" },
     #{"code": "couleur", "label":u"Couleur", "image": "Ctrl_couleur.png", "options": {"hauteur":20}, "filtre": None},
@@ -383,6 +384,7 @@ class Utilisateur(AbstractUser):
     categorie = models.CharField(verbose_name="Catégorie", max_length=50, blank=True, null=True, default="utilisateur")
     force_reset_password = models.BooleanField(verbose_name="Force la mise à jour du mot de passe", default=False)
     date_expiration_mdp = models.DateTimeField(verbose_name="Date d'expiration du mot de passe", blank=True, null=True)
+    structures_admin = models.ManyToManyField(Structure, verbose_name="Structures admin", related_name="utilisateur_structures_admin", blank=True)
     structures = models.ManyToManyField(Structure, verbose_name="Structures", related_name="utilisateur_structures", blank=True)
     adresse_exp = models.ForeignKey(AdresseMail, verbose_name="Adresse d'expédition d'emails", related_name="utilisateur_adresse_exp", blank=True, null=True, on_delete=models.PROTECT, help_text="Sélectionnez une adresse d'expédition d'emails favorite dans la liste. Il est possible de créer de nouvelles adresses depuis le menu Paramétrage > Adresses d'expédition.")
     signature = models.ForeignKey(SignatureEmail, verbose_name="Signature d'emails", related_name="utilisateur_signature", blank=True, null=True, on_delete=models.PROTECT, help_text="Sélectionnez une signature d'emails favorite dans la liste. Il est possible de créer de nouvelles signatures depuis le menu Paramétrage > Signatures d'emails.")
@@ -475,6 +477,21 @@ class CategorieTravail(models.Model):
     def __str__(self):
         return self.nom
 
+class CompteBancaireAvance(models.Model):
+    idcompteavance = models.AutoField(verbose_name="ID", db_column="IDcompte", primary_key=True)
+    nom = models.CharField(verbose_name="Nom", max_length=200)
+    structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=True, null=True)
+
+    class Meta:
+        db_table = 'comptes_bancaires_avance'
+        verbose_name = "compte d'avance"
+        verbose_name_plural = "comptes d'avances"
+
+    def __str__(self):
+        structure_name = "Sans structure"
+        if self.structure:
+            structure_name = self.structure.nom
+        return f"{self.nom} ({structure_name})"
 
 class CompteBancaire(models.Model):
     idcompte = models.AutoField(verbose_name="ID", db_column="IDcompte", primary_key=True)
@@ -1203,7 +1220,7 @@ class Activite(models.Model):
     date_fin = models.DateField(verbose_name="Date de fin", blank=True, null=True)
     public_liste = [(0, "Parents"), (1, "Chef/taine"), (2, "Chef/taine de groupe - Directeur/trice"), (3, "Délégué(e) Local"), (4, "Ami(e)"), (5, "Jeunes"), (6, "Tous les adultes sauf les parents")]
     public = models.IntegerField(verbose_name=_("Public destinataire"), choices=public_liste, blank=False, null=False, default=5)
-    vaccins_obligatoires = models.BooleanField(verbose_name="Vaccinations obligatoires", default=False)
+    vaccins_obligatoires = models.BooleanField(verbose_name="Vaccinations obligatoires", default=True)
     assurance_obligatoire = models.BooleanField(verbose_name="Assurance obligatoire", default=False)
     date_creation = models.DateTimeField(verbose_name="Date de création", auto_now_add=True)
     nbre_inscrits_max = models.IntegerField(verbose_name="Nombre d'inscrits maximal", blank=True, null=True)
@@ -1218,7 +1235,7 @@ class Activite(models.Model):
     portail_inscriptions_affichage = models.CharField(verbose_name="Inscriptions autorisées", max_length=100, choices=choix_affichage_inscriptions, default="TOUJOURS")
     portail_inscriptions_date_debut = models.DateTimeField(verbose_name="Date de début d'affichage", blank=True, null=True)
     portail_inscriptions_date_fin = models.DateTimeField(verbose_name="Date de fin d'affichage", blank=True, null=True)
-    portail_inscriptions_imposer_pieces = models.BooleanField(verbose_name="Imposer le téléchargement des pièces à fournir lors de l'inscription", default=True)
+    portail_inscriptions_imposer_pieces = models.BooleanField(verbose_name="Imposer le téléchargement des pièces à fournir lors de l'inscription", default=False)
     portail_inscriptions_bloquer_si_complet = models.BooleanField(verbose_name="Empêcher l'inscription si activité complète", default=False)
     choix_affichage_reservations = [("JAMAIS", "Ne pas autoriser"), ("TOUJOURS", "Autoriser")]
     portail_reservations_affichage = models.CharField(verbose_name="Réservations autorisées", max_length=100, choices=choix_affichage_reservations, default="JAMAIS")
@@ -2561,15 +2578,15 @@ class QuestionnaireQuestion(models.Model):
     categorie = models.CharField(verbose_name="Catégorie", max_length=200, choices=LISTE_CATEGORIES_QUESTIONNAIRES)
     ordre = models.IntegerField(verbose_name="Ordre")
     visible = models.BooleanField(verbose_name="Visible sur le bureau", default=True)
-    label = models.CharField(verbose_name="Label", max_length=250)
-    controle = models.CharField(verbose_name="contrôle", max_length=200, choices=[(ctrl["code"], ctrl["label"]) for ctrl in LISTE_CONTROLES_QUESTIONNAIRES])
-    choix = models.CharField(verbose_name="Choix", max_length=500, blank=True, null=True, help_text="Saisissez les choix possibles séparés par un point-virgule. Exemple : 'Bananes;Pommes;Poires'")
+    label = models.CharField(verbose_name="Intitulé de la question", max_length=250)
+    controle = models.CharField(verbose_name="Type de réponse", max_length=200, choices=[(ctrl["code"], ctrl["label"]) for ctrl in LISTE_CONTROLES_QUESTIONNAIRES])
+    choix = models.CharField(verbose_name="Choix", max_length=500, blank=True, null=True, help_text="Saisissez les choix possibles séparés par un point-virgule. Exemple : 'Bananes;Pommes;Poires'. Un champ 'RAS' sera automatiquement ajouté dans les choix")
     options = models.CharField(verbose_name="Options", max_length=250, blank=True, null=True)
     visible_portail = models.BooleanField(verbose_name="Visible sur le portail", default=True)
     visible_fiche_renseignement = models.BooleanField(verbose_name="Visible sur les fiches de renseignements", default=True)
     texte_aide = models.CharField(verbose_name="Texte d'aide", max_length=500, blank=True, null=True, help_text="Vous pouvez saisir un texte d'aide qui apparaîtra sous le champ de saisie.")
     structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=False, null=False)
-    activite = models.ForeignKey(Activite, verbose_name="Activité", on_delete=models.PROTECT, blank=True, null=True)
+    activite = models.ForeignKey(Activite, verbose_name="Activité", on_delete=models.PROTECT, blank=False, null=True)
 
     class Meta:
         db_table = 'questionnaire_questions'
@@ -3937,6 +3954,7 @@ class ComptaCategorie(models.Model):
     # journal = models.CharField(verbose_name="Journal", max_length=10, blank=True, null=True)
     compte_comptable = models.ForeignKey(ComptaCompteComptable, verbose_name="Compte comptable", on_delete=models.PROTECT, blank=True, null=True)
     structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=True, null=True)
+    bilan = models.BooleanField(verbose_name="Compte intégré au bilan", default=True)
 
     class Meta:
         db_table = "compta_categories"
@@ -3979,6 +3997,7 @@ class ComptaReleve(models.Model):
         return self.nom if self.nom else "Nouveau relevé"
 
 
+
 class ComptaVirement(models.Model):
     idvirement = models.AutoField(verbose_name="ID", db_column="IDvirement", primary_key=True)
     date = models.DateField(verbose_name="Date")
@@ -4001,6 +4020,19 @@ class ComptaVirement(models.Model):
         return "Virement ID%d" % self.idvirement
 
 
+class ComptaAvance(models.Model):
+    idcompta_avance = models.AutoField(verbose_name="ID", db_column='IDcompta_avance', primary_key=True)
+    nom = models.CharField(verbose_name="Nom complet ", max_length=200)
+    structure = models.ForeignKey(Structure, verbose_name="Structure ", on_delete=models.PROTECT, blank=False, null=False)
+
+    class Meta:
+        db_table = 'compta_avance'
+        verbose_name = "avance"
+        verbose_name_plural = "avances"
+
+    def __str__(self):
+        return self.nom
+
 class ComptaOperation(models.Model):
     idoperation = models.AutoField(verbose_name="ID", db_column="IDoperation", primary_key=True)
     type = models.CharField(verbose_name="Type", max_length=50, choices=[("debit", "Débit"), ("credit", "Crédit")])
@@ -4016,7 +4048,9 @@ class ComptaOperation(models.Model):
     observations = models.TextField(verbose_name="Observations", blank=True, null=True)
     virement = models.ForeignKey(ComptaVirement, verbose_name="Virement", on_delete=models.CASCADE, blank=True, null=True)
     document = models.FileField(verbose_name="Pièce justificative", storage=get_storage("justifs"), upload_to=get_uuid_path, blank=True, null=True)
-
+    avance = models.ForeignKey(ComptaAvance, verbose_name="Avance", on_delete=models.PROTECT, blank=True, null=True)
+    remb_avance = models.IntegerField( verbose_name="Référence de régularisation", blank=True, null=True, help_text="Identifiant utilisé pour relier les opérations entre elles (ex: ID de régularisation)")
+    regul_avance = models.BooleanField(verbose_name="Opération de régularisation d'avance", default=False)
     class Meta:
         db_table = "compta_operations"
         verbose_name = "Opération de trésorerie"
