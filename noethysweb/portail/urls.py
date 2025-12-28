@@ -10,7 +10,7 @@ from consommations.views import grille
 from portail.views import reset_password, change_password, reservations, planning, renseignements, individu_identite, individu_questionnaire, individu_contacts, \
                             individu_regimes_alimentaires, individu_coords, individu_medecin, individu_informations, individu_assurances, individu_vaccinations, individu_allergies, individu_dispmed, \
                             famille_caisse, profil, profil_password_change, facturation, reglements, mentions, contact, messagerie, individu_maladies, album, documents, individu_traitement, \
-                            transmettre_piece, activites, inscrire_activite, attente_paiement, cotisations, sondage, famille_questionnaire, famille_parametres, pages_speciales, famille_individu, famille_parent
+                            transmettre_piece, activites, inscrire_activite, attente_paiement, cotisations, sondage, famille_questionnaire, famille_parametres, pages_speciales, famille_individu, famille_parent, paiement_tpe, paiement_retour
 from core.decorators import secure_ajax_portail
 
 
@@ -136,7 +136,7 @@ urlpatterns = [
     path('retour_payzen_success', facturation.View_retour_paiement.as_view(etat="success"), name='retour_payzen_success'),
     path('ipn_payzen', facturation.ipn_payzen, name='ipn_payzen'),
     path('retour_payfip', facturation.retour_payfip, name='retour_payfip'),
-    path('attente_paiement', attente_paiement.View.as_view(), name='portail_attente_paiement'),
+    path('attente_paiement/', attente_paiement.View.as_view(), name='portail_attente_paiement'),
 
     # Règlements
     path('reglements', reglements.View.as_view(), name='portail_reglements'),
@@ -167,5 +167,6 @@ urlpatterns = [
     path('activites/get_activites_par_structure', secure_ajax_portail(inscrire_activite.Get_activites_par_structure), name='portail_ajax_get_activites_par_structure'),
     path('activites/validation_form', secure_ajax_portail(inscrire_activite.Valid_form), name='portail_ajax_inscrire_valid_form'),
     path('paremetrage/activite/liste', secure_ajax_portail(activites.Appliquer_modification), name='ajax_annulation_portail'),
+    path('facturation/paiement', secure_ajax_portail(paiement_tpe.paiement_tpe),name='portail_ajax_paiement_tpe'),
 
 ]

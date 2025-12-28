@@ -615,7 +615,6 @@ class View(CustomView, TemplateView):
     def get_context_data(self, **kwargs):
         context = super(View, self).get_context_data(**kwargs)
         context['page_titre'] = "Facturation"
-        logger.debug("Def context")
 
         # Vérifie si la famille est abonnée au prélèvement automatique
         context["prelevement_actif"] = Mandat.objects.filter(famille=self.request.user.famille, actif=True).exists()
@@ -760,7 +759,7 @@ class View(CustomView, TemplateView):
                     famille=self.request.user.famille,
                     activite__in=activites_accessibles)
                 .annotate(
-                    montant_total=Coalesce(Sum("montant"), Value(decimal.Decimal(0))),
+                    montant_total=F('montant'),
                     montant_regle=Coalesce(
                         Sum("ventilation__montant"),
                         Value(decimal.Decimal(0))

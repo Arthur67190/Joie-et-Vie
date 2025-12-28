@@ -74,7 +74,7 @@
                                     <td>
                                         {% if prestation.montant_restant > 0 %}
                                             <button class="btn btn-success btn-sm btn-payer"
-                                                    data-idprestation="{{ prestation.idprestation }}"
+                                                    data-idprestation="{{ prestation.id }}"
                                                     data-montant="{{ prestation.montant_restant|floatformat:2 }}">
                                                 €
                                             </button>
@@ -491,9 +491,9 @@
 
         // Clic sur le bouton €
         $(".btn-payer").on("click", function(){
-            const idprestation = $(this).data("idprestation");
+            const id = $(this).data("idprestation");
             const montant = $(this).data("montant");
-            $("#idPrestation").val(idprestation);
+            $("#idPrestation").val(id);
             $("#montantPaiement").val(montant);
             $("#modalPaiement").modal("show");
         });
@@ -506,10 +506,12 @@
 
             $.ajax({
                 type: "POST",
-                url: "{% url 'portail_ajax_paiement_tpe' %}",
+                url: "{% url 'portail_ajax_effectuer_paiement_en_ligne' %}",
                 data: {
-                    id_prestation: idprestation,
-                    montant: montant,
+                    idprestation: idprestation,
+                    montant_reglement: montant,
+                    liste_impayes: idprestation + "##F##" + montant,
+                    paiement_echelonne: 0,
                     csrfmiddlewaretoken: "{{ csrf_token }}"
                 },
                 success: function(response){
@@ -544,13 +546,13 @@
             <div class="modal-body">
               <input type="hidden" id="idPrestation" name="idprestation">
               <div class="mb-3">
-                <label for="montantPaiement" class="form-label">Montant à payer (minimum 0,50€)</label>
+                <label for="montantPaiement" class="form-label">Montant à payer</label>
                 <input type="number" step="0.01" class="form-control" id="montantPaiement" name="montant">
               </div>
             </div>
             <div class="modal-footer">
               <button type="submit" class="btn btn-primary">Payer</button>
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
             </div>
           </form>
         </div>

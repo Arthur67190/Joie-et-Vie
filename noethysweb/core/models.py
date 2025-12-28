@@ -1214,8 +1214,10 @@ class Activite(models.Model):
     logo_org = models.BooleanField(verbose_name="Logo identique à celui de l'organisateur", default=True)
     logo = ResizedImageField(verbose_name="Logo", upload_to=get_uuid_path, blank=True, null=True)
     pay_org = models.BooleanField(verbose_name="Activation paiement par lien externe", default=False)
-    visible = models.BooleanField(verbose_name="Visible sur le portail", default=True)
+    choix_tpe = [("HELLOASSO", "HelloAsso"), ("STRIPE", "Stripe"), ("PAYASSO", "PayAsso"), ("AUTRE", "Divers")]
+    pay_org_tpe = models.CharField(verbose_name="Passerelle de paiement", max_length=100, choices=choix_tpe, default="HELLOASSO")
     pay = models.CharField(verbose_name="URL complet de paiement", max_length=200, blank=True, null=True)
+    visible = models.BooleanField(verbose_name="Visible sur le portail", default=True)
     date_debut = models.DateField(verbose_name="Date de début", blank=True, null=True)
     date_fin = models.DateField(verbose_name="Date de fin", blank=True, null=True)
     public_liste = [(0, "Parents"), (1, "Chef/taine"), (2, "Chef/taine de groupe - Directeur/trice"), (3, "Délégué(e) Local"), (4, "Ami(e)"), (5, "Jeunes"), (6, "Tous les adultes sauf les parents")]
@@ -1479,6 +1481,24 @@ class Evenement(models.Model):
 
     def __str__(self):
         return "Evenement ID%d" % self.idevenement
+
+
+class HelloAssoConfig(models.Model):
+    client_id = models.CharField(max_length=255, help_text="Client ID HelloAsso")
+    client_secret = models.CharField(max_length=255, help_text="Client Secret HelloAsso")
+    org_slug = models.CharField(max_length=255, help_text="Organisation slug HelloAsso")
+    activites = models.ManyToManyField('Activite', related_name='helloasso_configs', blank=True)
+    actif = models.BooleanField(default=True, help_text="Activer cette configuration")
+
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuration HelloAsso"
+        verbose_name_plural = "Configurations HelloAsso"
+
+    def __str__(self):
+        return f"{self.org_slug} ({self.pk})"
 
 
 class CategorieTarif(models.Model):
@@ -2407,6 +2427,49 @@ class Consommation(models.Model):
 
     def __str__(self):
         return "Consommation ID%d" % self.idconso if self.idconso else "Nouveau"
+
+
+class PaiementTpe(models.Model):
+    STATUT_ATTENTE = "ATTENTE"
+    STATUT_SUCCES = "SUCCES"
+    STATUT_ECHEC = "ECHEC"
+
+    STATUT_CHOICES = [
+        (STATUT_ATTENTE, "En attente"),
+        (STATUT_SUCCES, "Succès"),
+        (STATUT_ECHEC, "Échec"),
+    ]
+
+    prestation = models.ForeignKey(Prestation, on_delete=models.CASCADE)
+    montant = models.DecimalField(max_digits=8, decimal_places=2)
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES)
+    reference = models.CharField(max_length=100, unique=True)
+
+    helloasso_checkout_id = models.CharField(
+        max_length=50, null=True, blank=True
+    )
+
+    created = models.DateTimeField(auto_now_add=True)
+
+class TokenHA(models.Model):
+    prestation = models.ForeignKey(
+        Prestation,
+        on_delete=models.CASCADE,
+        related_name="tokens_helloasso"
+    )
+    checkout_intent_id = models.CharField(max_length=100, unique=True)
+    organisation_slug = models.CharField(max_length=100)
+    access_token = models.CharField(max_length=255, blank=True, null=True)
+    expires_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        """Vérifie si le token est encore valide"""
+        return self.access_token and self.expires_at and self.expires_at > timezone.now()
+
+    def __str__(self):
+        return f"{self.prestation} - {self.checkout_intent_id}"
+
 
 
 class DepotCotisations(models.Model):
