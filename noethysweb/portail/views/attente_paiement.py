@@ -17,55 +17,6 @@ from django.shortcuts import redirect
 
 logger = logging.getLogger(__name__)
 
-def verifier_paiement_prestation(prestation_id=None, checkout_intent_id=None):
-    """
-    Vérifie l'état du paiement pour une prestation ou un checkout_intent_id via HelloAsso.
-    """
-    # 1️⃣ Récupérer le TokenHA valide
-    token_qs = TokenHA.objects.filter(
-        expires_at__gt=timezone.now()
-    )
-
-    if prestation_id:
-        token_qs = token_qs.filter(prestation__idprestation=prestation_id)
-    elif checkout_intent_id:
-        token_qs = token_qs.filter(checkout_intent_id=checkout_intent_id)
-    else:
-        logger.error("Il faut soit prestation_id soit checkout_intent_id")
-        return None
-
-    token_entry = token_qs.order_by('-expires_at').first()
-    if not token_entry:
-        logger.error("Aucun token valide trouvé dans TokenHA pour ce paiement")
-        return None
-
-    token = token_entry.access_token
-    org_slug = token_entry.organisation_slug
-    checkout_id = checkout_intent_id or token_entry.checkout_intent_id
-    if not checkout_id:
-        logger.error("Pas de checkout_intent_id disponible pour ce paiement")
-        return None
-
-    # 2️⃣ Appel à l'API HelloAsso
-    url = f"https://api.helloasso.com/v5/organizations/{org_slug}/checkout-intents/{checkout_id}"
-    headers = {"Authorization": f"Bearer {token}"}
-    try:
-        resp = requests.get(url, headers=headers)
-        resp.raise_for_status()
-    except requests.RequestException as e:
-        logger.error(f"Erreur API HelloAsso: {e}")
-        return None
-
-    data = resp.json()
-    # 3️⃣ Retourner les infos utiles, par ex. le state
-    return {
-        "state": data.get("state"),
-        "checkout_id": checkout_id,
-        "amount": data.get("totalAmount"),
-        "order_id": data.get("orderId"),
-        "reference": data.get("reference")
-    }
-
 
 from django.shortcuts import redirect
 from django.contrib import messages
@@ -111,7 +62,7 @@ class View(CustomView, TemplateView):
         org_slug = token_entry.organisation_slug
 
         # ⚠️ DEV ONLY — passer à False en production
-        HELLOASSO_FORCE_SANDBOX = True
+        HELLOASSO_FORCE_SANDBOX = False
         api_base = "https://api.helloasso-sandbox.com/v5/organizations" if HELLOASSO_FORCE_SANDBOX else "https://api.helloasso.com/v5/organizations"
 
         # 2️⃣ Vérifier le paiement via HelloAsso

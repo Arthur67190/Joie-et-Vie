@@ -64,7 +64,7 @@ def paiement_tpe(request):
         if not config:
             return JsonResponse({"success": False, "erreur": "Aucune configuration HelloAsso trouvée"}, status=400)
 
-        client = HelloAssoClient(config.client_id, config.client_secret, organisation_slug=config.org_slug, sandbox=True) #CHANGER EN PROD
+        client = HelloAssoClient(config.client_id, config.client_secret, organisation_slug=config.org_slug, sandbox=False) #CHANGER EN PROD
         try:
             url_checkout = client.create_checkout(
                 total_amount=montant,

@@ -12,7 +12,7 @@ class HelloAssoClient:
     CHECKOUT_URL_PROD_TEMPLATE = "https://api.helloasso.com/v5/organizations/{org}/checkout-intents"
     CHECKOUT_URL_SANDBOX_TEMPLATE = "https://api.helloasso-sandbox.com/v5/organizations/{org}/checkout-intents"
 
-    def __init__(self, client_id, client_secret, organisation_slug, sandbox=False): #POUR LE DEV UNIQUEMENT !!!!!
+    def __init__(self, client_id, client_secret, organisation_slug, sandbox=True): #POUR LE DEV UNIQUEMENT !!!!!
         self.client_id = client_id
         self.client_secret = client_secret
         self.organisation_slug = organisation_slug
