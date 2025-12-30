@@ -60,7 +60,7 @@ def paiement_tpe(request):
         contains_donation = False
 
         # HelloAsso : on crée le checkout et renvoie l'URL
-        config = HelloAssoConfig.objects.filter(activites=activite).first()
+        config = HelloAssoConfig.objects.filter(activites=activite, actif=True).first()
         if not config:
             return JsonResponse({"success": False, "erreur": "Aucune configuration HelloAsso trouvée"}, status=400)
 
