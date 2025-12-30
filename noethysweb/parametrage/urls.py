@@ -26,7 +26,7 @@ from parametrage.views import organisateur, structures, \
     categories_produits, produits, produits_tarifs, postes_analytiques, comptes_comptables, categories_comptables, tiers, budgets, \
     types_qualifications_collaborateurs, types_pieces_collaborateurs, types_evenements_collaborateurs, types_postes_collaborateurs, \
     modeles_plannings_collaborateurs, groupes_collaborateurs, modeles_aides, transports, compagnies, lignes, lieux, arrets, modeles_impressions, \
-    modeles_word, releves_bancaires, sondages, types_allergies, types_dispmed, types_deduction
+    modeles_word, releves_bancaires, sondages, types_allergies, types_dispmed, types_deduction, config_paiement
 
 
 urlpatterns = [
@@ -121,7 +121,6 @@ urlpatterns = [
 
     path('parametrage/activites/portail_parametres/<int:idactivite>', activites_portail_parametres.Consulter.as_view(), name='activites_portail_parametres'),
     path('parametrage/activites/portail_parametres/modifier/<int:idactivite>', activites_portail_parametres.Modifier.as_view(), name='activites_portail_parametres_modifier'),
-
     # path('parametrage/activites/portail_unites/liste/<int:idactivite>', activites_portail_unites.Liste.as_view(), name='activites_portail_unites_liste'),
     # path('parametrage/activites/portail_unites/ajouter/<int:idactivite>', activites_portail_unites.Ajouter.as_view(), name='activites_portail_unites_ajouter'),
     # path('parametrage/activites/portail_unites/modifier/<int:idactivite>/<int:pk>', activites_portail_unites.Modifier.as_view(), name='activites_portail_unites_modifier'),
@@ -158,6 +157,12 @@ urlpatterns = [
     path('parametrage/comptes_bancaires/ajouter', comptes_bancaires.Ajouter.as_view(), name='comptes_bancaires_ajouter'),
     path('parametrage/comptes_bancaires/modifier/<int:pk>', comptes_bancaires.Modifier.as_view(), name='comptes_bancaires_modifier'),
     path('parametrage/comptes_bancaires/supprimer/<int:pk>', comptes_bancaires.Supprimer.as_view(), name='comptes_bancaires_supprimer'),
+
+    # Passerelle paiement
+    path('parametrage/config_paiement/liste', config_paiement.Liste.as_view(), name='config_paiement_liste'),
+    path('parametrage/config_paiement/ajouter', config_paiement.Ajouter.as_view(),         name='config_paiement_ajouter'),
+    path('parametrage/config_paiement/modifier/<int:pk>', config_paiement.Modifier.as_view(),         name='config_paiement_modifier'),
+    path('parametrage/comptes_bancconfig_paiementaires/supprimer/<int:pk>', config_paiement.Supprimer.as_view(),         name='config_paiement_supprimer'),
 
     # Modes de règlements
     path('parametrage/modes_reglements/liste', modes_reglements.Liste.as_view(), name='modes_reglements_liste'),
