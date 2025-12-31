@@ -76,3 +76,29 @@ class Ajouter(Page, crud.Ajouter):
         PortailRenseignement.objects.create(famille=self.request.user.famille, individu=instance.individu,
                                             categorie="famille_pieces", code="Nouvelle pièce", validation_auto=True,
                                             nouvelle_valeur=json.dumps(instance.Get_nom(), cls=DjangoJSONEncoder), idobjet=instance.pk)
+
+
+class Modifier(Page, crud.Modifier):
+    form_class = Formulaire
+    texte_confirmation = _("Le document a bien été modifié")
+    titre_historique = _("Modifier une pièce")
+    template_name = "portail/edit.html"
+
+    def get_queryset(self):
+        """
+        Sécurité : l'utilisateur ne peut modifier
+        que ses propres documents"""
+
+        return Piece.objects.filter(
+            pk=self.kwargs["pk"],
+        )
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_titre"] = _("Modifier un document")
+        context["box_introduction"] = _(
+            "Modifiez le document puis cliquez sur Enregistrer."
+        )
+        return context
+
+    def get_success_url(self):
+        return reverse_lazy("portail_documents")
