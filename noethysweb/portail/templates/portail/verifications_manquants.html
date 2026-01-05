@@ -21,14 +21,6 @@
             <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
                  id="individu-{{ ir.individu.idindividu }}">
 
-                 <!-- PDF pour cette personne -->
-                <iframe
-                    src="{{ ir.nom_fichier }}"
-                    width="100%"
-                    height="700"
-                    style="border:1px solid #ccc;">
-                </iframe>
-
                  <!-- Bouton de validation -->
                  <form method="post" style="margin-top:1em;">
                      {% csrf_token %}
@@ -41,6 +33,14 @@
                 <a href="{% url 'portail_individu_identite' ir.rattachement.pk %}" class="btn btn-secondary mt-2">
                     ✎ Modifier les informations
                 </a>
+                <br></br>
+                 <!-- PDF pour cette personne -->
+                <iframe
+                    src="{{ ir.nom_fichier }}"
+                    width="100%"
+                    height="700"
+                    style="border:1px solid #ccc;">
+                </iframe>
 
             </div>
         {% endfor %}
