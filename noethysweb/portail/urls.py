@@ -147,6 +147,7 @@ urlpatterns = [
 
     # Contact
     path('contact', contact.View.as_view(), name='portail_contact'),
+    path('contact/<int:idstructure>', contact.View.as_view(), name='portail_contact_conversation'),
     path('contact/messagerie/<int:idstructure>', messagerie.Ajouter.as_view(), name='portail_messagerie'),
 
     # Mentions

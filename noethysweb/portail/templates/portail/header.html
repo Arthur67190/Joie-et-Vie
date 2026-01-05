@@ -54,7 +54,7 @@
                     <div class="dropdown-divider"></div>
 
                     {% for message in liste_messages_lus %}
-                        <a href="{% url 'portail_messagerie' idstructure=message.structure_id %}" class="dropdown-item" title="{{ message.texte|striptags }}">
+                        <a href="{% url 'portail_contact_conversation' idstructure=message.structure_id %}" class="dropdown-item" title="{{ message.texte|striptags }}">
                             <div class="media">
                                 <div class="media-body">
                                     <h3 class="dropdown-item-title">
@@ -63,7 +63,6 @@
                                     <p class="text-xs">{{ message.texte|striptags|truncatechars:55 }}</p>
                                     <p class="mt-1 text-muted" style="font-size: 10px;">
                                         <i class="fa fa-clock-o mr-1"></i>{{ message.date_creation|timesince }}
-                                        | <i class="fa fa-users mr-1"></i>{{ message.famille.nom }}
                                     </p>
                                 </div>
                             </div>

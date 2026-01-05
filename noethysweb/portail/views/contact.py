@@ -3,7 +3,7 @@
 #  Noethysweb, application de gestion multi-activités.
 #  Distribué sous licence GNU GPL.
 
-import logging
+import logging, datetime
 logger = logging.getLogger(__name__)
 from portail.views.base import CustomView
 from django.views.generic import TemplateView
@@ -19,11 +19,6 @@ class View(CustomView, TemplateView):
     def get_context_data(self, **kwargs):
         context = super(View, self).get_context_data(**kwargs)
         context['page_titre'] = _("Contact")
-        messages_non_lus = context.get("liste_messages_non_lus", [])
-        messages_lus = context.get("liste_messages_lus", [])
-        context['liste_messages_non_lus'] = messages_non_lus
-        context['liste_messages_lus'] = messages_lus
-        context['structure_all'] = Structure.objects.filter(visible=True).order_by('nom')
 
         # Récupération des activités avec inscription
         inscriptions = Inscription.objects.filter(famille=self.request.user.famille)
@@ -38,8 +33,20 @@ class View(CustomView, TemplateView):
         # Structures avec coordonnées
         context['liste_structures_coords'] = [structure for structure in liste_structures if structure.afficher_coords]
 
+        context['structure_all'] = Structure.objects.filter(visible=True).order_by('nom')
+
         # Importation du nombre de messages non lus (regroupement par structure)
         context['dict_messages_non_lus'] = {valeur["structure"]: valeur["nbre"] for valeur in PortailMessage.objects.values("structure").filter(famille=self.request.user.famille, utilisateur__isnull=False, date_lecture__isnull=True).annotate(nbre=Count('pk'))}
 
+        # Récupérer l'idstructure sélectionné depuis l'URL (optionnel)
+        idstructure = self.kwargs.get("idstructure", None)
+        if idstructure:
+            context['structure'] = Structure.objects.get(pk=idstructure)
+            context['liste_messages_discussion'] = PortailMessage.objects.select_related("famille", "structure", "utilisateur").filter(famille=self.request.user.famille, structure_id=idstructure).order_by("date_creation")
+
+            # Marquer les messages non lus de cette structure comme lus
+            PortailMessage.objects.filter(famille=self.request.user.famille, structure_id=idstructure, utilisateur__isnull=False, date_lecture__isnull=True).update(date_lecture=datetime.datetime.now())
+        else:
+            context['liste_messages_discussion'] = []
 
         return context

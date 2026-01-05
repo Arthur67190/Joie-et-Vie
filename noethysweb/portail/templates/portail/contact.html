@@ -15,6 +15,14 @@ margin-bottom: 0.5rem;
 }
 .message-box {
 padding: 0.5rem 1rem;
+cursor: pointer;
+}
+.message-box:hover {
+background-color: #f8f9fa;
+}
+.message-box.active {
+background-color: #007bff;
+color: white;
 }
 .message-title i {
 margin-right: 5px;
@@ -34,71 +42,144 @@ color: #6c757d;
 {% block contenu_page %}
 
 <div class="row">
-    <div class="col-md-12">
 
-    <div class="text-center mb-4">
-        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#nouvelleConversationModal">
-            Nouvelle conversation
-        </button>
+    {# Colonne gauche : Liste des conversations #}
+    <div class="col-md-4">
+
+        <div class="text-center mb-2">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#nouvelleConversationModal">
+                Nouvelle conversation
+            </button>
+        </div>
+
+        {# Messages non lus #}
+        {% embed 'core/box.html' with box_titre=True %}
+            {% block box_theme %}card-outline card-lightblue{% endblock %}
+            {% block box_titre %}Messages non lus{% endblock %}
+            {% block box_soustitre %}<div class="box-soustitre">Derniers messages reçus</div>{% endblock %}
+            {% block card_body_classe %}p-0{% endblock %}
+            {% block box_contenu %}
+                {% for message in liste_messages_non_lus %}
+                    <div class="message-box {% if structure and message.structure == structure %}active{% endif %}">
+                        <a href="{% url 'portail_contact_conversation' idstructure=message.structure_id %}">
+                            <div class="media">
+                                <div class="media-body">
+                                    <h3 class="dropdown-item-title">
+                                        <i class="fa fa-envelope text-danger mr-1"></i> <strong>{{ message.structure.nom }}</strong>
+                                    </h3>
+                                    <p class="text-xs m-0">{{ message.texte|striptags|truncatechars:50 }}</p>
+                                    <p class="mt-1 m-0" style="font-size: 10px;">
+                                        <i class="fa fa-clock-o mr-1"></i>{{ message.date_creation|timesince }}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="dropdown-divider m-0"></div>
+                {% empty %}
+                    <div class="p-2 text-success">Aucun message non lu</div>
+                {% endfor %}
+            {% endblock box_contenu %}
+        {% endembed %}
+
+        {# Messages lus #}
+        {% embed 'core/box.html' with box_titre=True %}
+            {% block box_theme %}card-outline card-lightblue{% endblock %}
+            {% block box_titre %}Conversations en cours{% endblock %}
+            {% block box_soustitre %}<div class="box-soustitre">Messages lus récemment</div>{% endblock %}
+            {% block card_body_classe %}p-0{% endblock %}
+            {% block box_contenu %}
+                {% for message in liste_messages_lus %}
+                    <div class="message-box {% if structure and message.structure == structure %}active{% endif %}">
+                        <a href="{% url 'portail_contact_conversation' idstructure=message.structure_id %}">
+                            <div class="media">
+                                <div class="media-body">
+                                    <h3 class="dropdown-item-title">
+                                        <i class="fa fa-envelope-open text-success mr-1"></i> <strong>{{ message.structure.nom }}</strong>
+                                    </h3>
+                                    <p class="text-xs m-0">{{ message.texte|striptags|truncatechars:50 }}</p>
+                                    <p class="mt-1 m-0" style="font-size: 10px;">
+                                        <i class="fa fa-clock-o mr-1"></i>{{ message.date_creation|timesince }}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="dropdown-divider m-0"></div>
+                {% empty %}
+                    <div class="p-2 text-muted">Aucun message lu récent</div>
+                {% endfor %}
+            {% endblock box_contenu %}
+        {% endembed %}
+
     </div>
 
-    {# Messages non lus #}
-    {% embed 'core/box.html' with box_titre=True %}
-        {% block box_theme %}card-outline card-lightblue{% endblock %}
-        {% block box_titre %}Messages non lus{% endblock %}
-        {% block box_soustitre %}<div class="box-soustitre">Derniers messages reçus</div>{% endblock %}
-        {% block card_body_classe %}p-0{% endblock %}
-        {% block box_contenu %}
-            {% if liste_messages_non_lus %}
-                {% for message in liste_messages_non_lus %}
-                    <div class="message-box {% if message.structure == structure %}bg-primary{% endif %}">
-                        <a href="{% url 'portail_messagerie' idstructure=message.structure_id %}">
-                            <div class="message-title">
-                                <i class="fa fa-envelope text-danger"></i> <strong>{{ message.structure.nom }}</strong>
-                            </div>
-                            <p class="message-preview">{{ message.texte|striptags|truncatechars:50 }}</p>
-                            <p class="message-meta">
-                                <i class="fa fa-clock-o"></i> {{ message.date_creation|timesince }}
-                            </p>
-                        </a>
-                    </div>
-                    <hr class="m-0">
-                {% endfor %}
-            {% else %}
-                <div class="p-2 text-success">Aucun message non lu</div>
-            {% endif %}
-        {% endblock box_contenu %}
-    {% endembed %}
+    {# Colonne droite : Messages de la conversation sélectionnée #}
+    <div class="col-md-8">
+        {% if structure %}
+            {% embed 'core/box.html' with box_titre=True %}
+                {% block box_theme %}card-outline card-lightblue direct-chat direct-chat-primary{% endblock %}
+                {% block box_titre %}
+                    Discussion avec '{{ structure.nom }}'
+                    <a href="{% url 'portail_messagerie' idstructure=structure.idstructure %}" class="btn btn-primary btn-sm float-right">
+                        <i class="fa fa-reply"></i> Répondre
+                    </a>
+                {% endblock %}
+                {% block box_contenu %}
+                    {% if not liste_messages_discussion %}
+                        <div style="padding:20px;">Aucun message récent.</div>
+                    {% else %}
+                        <div id="div_messages" class="direct-chat-messages" style="height: 500px; padding: 20px;">
+                            {% for message in liste_messages_discussion %}
+                                {% if message.utilisateur %}
+                                    {# Message de l'administrateur #}
+                                    <div class="direct-chat-msg right">
+                                        <div class="direct-chat-infos clearfix">
+                                            <span class="direct-chat-name float-right">{% firstof message.utilisateur.get_full_name message.utilisateur message.utilisateur.get_short_name %}</span>
+                                            <span class="direct-chat-timestamp float-left">{{ message.date_creation|date:"l j F Y H:i" }}</span>
+                                        </div>
+                                        <img class="direct-chat-img" src="{% static "images/user.png" %}">
+                                        <div class="direct-chat-text">{{ message.texte|safe }}</div>
+                                    </div>
+                                {% else %}
+                                    {# Message de la famille #}
+                                    <div class="direct-chat-msg">
+                                        <div class="direct-chat-infos clearfix">
+                                            <span class="direct-chat-name float-left">{{ message.famille }}</span>
+                                            <span class="direct-chat-timestamp float-right">{{ message.date_creation|date:"l j F Y H:i" }}</span>
+                                        </div>
+                                        <img class="direct-chat-img" src="{% static "images/user.png" %}">
+                                        <div class="direct-chat-text">{{ message.texte|safe }}</div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endblock box_contenu %}
+            {% endembed %}
 
-    {# Messages lus #}
-    {% embed 'core/box.html' with box_titre=True %}
-        {% block box_theme %}card-outline card-lightblue{% endblock %}
-        {% block box_titre %}Conversations en cours{% endblock %}
-        {% block box_soustitre %}<div class="box-soustitre">Messages lus récemment</div>{% endblock %}
-        {% block card_body_classe %}p-0{% endblock %}
-        {% block box_contenu %}
-            {% if liste_messages_lus %}
-                {% for message in liste_messages_lus %}
-                    <div class="message-box {% if message.structure == structure %}bg-primary{% endif %}">
-                        <a href="{% url 'portail_messagerie' idstructure=message.structure_id %}">
-                            <div class="message-title">
-                                <i class="fa fa-envelope-open text-success"></i> <strong>{{ message.structure.nom }}</strong>
-                            </div>
-                            <p class="message-preview">{{ message.texte|striptags|truncatechars:50 }}</p>
-                            <p class="message-meta">
-                                <i class="fa fa-clock-o"></i> {{ message.date_creation|timesince }}
-                            </p>
-                        </a>
+            {# Lien pour répondre au message #}
+            <div class="text-center mt-3">
+                <a href="{% url 'portail_messagerie' idstructure=structure.idstructure %}" class="btn btn-success btn-lg">
+                    <i class="fa fa-paper-plane"></i> Écrire un message
+                </a>
+            </div>
+        {% else %}
+            {% embed 'core/box.html' with box_titre=True %}
+                {% block box_theme %}card-outline card-lightblue{% endblock %}
+                {% block box_titre %}Sélectionnez une conversation{% endblock %}
+                {% block box_contenu %}
+                    <div class="text-center" style="padding: 100px 20px;">
+                        <i class="fa fa-comments-o" style="font-size: 80px; color: #ccc;"></i>
+                        <p class="mt-3" style="font-size: 1.2rem; color: #666;">
+                            Cliquez sur une conversation à gauche pour afficher les messages
+                        </p>
                     </div>
-                    <hr class="m-0">
-                {% endfor %}
-            {% else %}
-                <div class="p-2 text-muted">Aucun message lu récent</div>
-            {% endif %}
-        {% endblock box_contenu %}
-    {% endembed %}
+                {% endblock box_contenu %}
+            {% endembed %}
+        {% endif %}
+    </div>
 
-</div>
 </div>
 
 <!-- Modal -->
@@ -164,9 +245,13 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     selectStructure.addEventListener("change", updateLien);
+
+    {# Scroll jusqu'en bas de la liste des messages #}
+    {% if structure %}
+        $("#div_messages").scrollTop($("#div_messages").get(0).scrollHeight);
+    {% endif %}
 });
 </script>
 
 {% endblock %}
-
 
