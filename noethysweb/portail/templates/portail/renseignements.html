@@ -73,24 +73,6 @@
         </div>
     {% endif %}
 
-    {# Approbations en attente #}
-    {% if form.fields %}
-        {% embed 'core/box.html' with box_introduction=True %}
-            {% block box_theme %}card-outline card-info{% endblock %}
-            {% block box_titre %}{% blocktrans %}Approbations en attente{% endblocktrans %}{% endblock %}
-            {% block box_introduction %}{% blocktrans %}L'accès aux inscriptions nécessite les approbations suivantes. Après avoir complété et vérifié les fiches, cochez les cases puis cliquez sur le bouton Valider.{% endblocktrans %}{% endblock %}
-            {% block box_contenu %}
-                <form id="famille_approbations_form" method="post">
-                    {% csrf_token %}
-                    <div class="card-columns">
-                        {% crispy form %}
-                    </div>
-                    <button type="submit" title="{% trans "Enregistrer" %}" class="btn btn-primary pull-right" value="Enregistrer"><i class="fa fa-check margin-r-5"></i>{% blocktrans %}Valider les approbations cochées{% endblocktrans %}</button>
-                </form>
-            {% endblock %}
-        {% endembed %}
-    {% endif %}
-
 {% comment %}
     {#  Renseignements manquants #}
     {% if renseignements_manquants %}

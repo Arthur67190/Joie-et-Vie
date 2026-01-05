@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from django.views.generic import TemplateView
 
@@ -319,6 +320,7 @@ class IndividuForm(forms.ModelForm):
             individu=individu,
             categorie=CATEGORIE_RATTACHEMENT_ENFANT,
             titulaire=False,
+            certification_date=datetime.now(),
         )
         rattachement.save()
         individu.Maj_infos()

@@ -1,3 +1,9 @@
+Version 1.3.5.6.2 (05/01/2026)
+- supprimer certification dans l'onglet renseignement
+- supprimer le blocage pour l'inscription à une activité
+- certifier la fiche lors de la création
+- réduction de la taille des logs a 5MB
+
 Version 1.3.5.6.1 (30/12/2025)
 - bug compta helloAsso
 - ajout édition pièce
