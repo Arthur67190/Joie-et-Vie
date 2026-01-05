@@ -256,7 +256,7 @@ LOGGING = {
             'formatter': 'complet',
             'filename': os.path.join(BASE_DIR, '..', 'debug.log'),
             'backupCount': 10,
-            'maxBytes': 20971520, # 20*1024*1024 bytes (20MB)
+            'maxBytes': 5242880, # 5*1024*1024 bytes (5MB)
         },
         'json_file': {
             'level': 'DEBUG',
