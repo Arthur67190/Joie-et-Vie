@@ -14,17 +14,16 @@ class Procedure(BaseProcedure):
 
     def Executer(self, variables=None):
         try:
-            # Vérification que l'activité a été fournie
-            activite = variables.get('activite')
-
-            if not activite:
+            activite_id = variables.get('activite')
+            if not activite_id:
                 return "Aucune activité sélectionnée."
 
-            # Assurer que `activite` est un seul objet Activite
-            if isinstance(activite, Activite):
-                activite_id = activite.idactivite
-            else:
-                return "L'activité fournie n'est pas valide."
+            # Récupérer l'activité depuis la base
+            try:
+                activite_label = Activite.objects.get(idactivite=activite_id.idactivite)
+                activite = activite_label.idactivite
+            except Activite.DoesNotExist:
+                return "L'activité fournie n'existe pas."
 
             # Récupérer les structures associées à l'activité
             structures = Structure.objects.filter(activite=activite_id)
@@ -33,16 +32,9 @@ class Procedure(BaseProcedure):
             articles_modifies = Article.objects.filter(
                 activites=activite
             ).update(structure=12, statut='non_publie')
-
             # Questionnaires
             questionnaires_modifiés = QuestionnaireQuestion.objects.filter(
-                activites=activite
-            ).update(structure=12)
-
-            # Album
-            album_modifies = Album.objects.filter(
-                structure__in=structures,
-                article__activite__in=activites
+                activite=activite
             ).update(structure=12)
 
             # Documents
@@ -56,20 +48,17 @@ class Procedure(BaseProcedure):
 
             # Renommage Activité
             activite_statut = Activite.objects.filter(
-                idactivite=activite_id
+                idactivite=activite
             ).update(visible=False, nom=Concat(Value('ARCHIVE - '), F('nom')), structure=12)
 
             # Mise à jour des documents associés
             for doc in actdocument_modifies:
                 doc.activites.set([23])
 
-            structures.delete()
-
             return (
                 f"Nombre d'articles modifiés : {articles_modifies}, "
                 f"Nombre de questionnaires modifiés : {questionnaires_modifiés}, "
                 f"Nombre de documents modifiés : {strucdocument_modifies}, "
-                f"Nombre d'albums modifiés : {album_modifies}, "
             )
 
         except Exception as e:
