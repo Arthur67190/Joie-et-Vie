@@ -84,6 +84,25 @@ class Liste_commun():
                         if label == criteres[0]:
                             criteres[0] = code
 
+                # Filtres génériques sur l'activité
+                if filtre["champ"] in ("activite", "activite_id", "activite:activite"):
+                    resultats = []
+                    for c in criteres:
+                        if isinstance(c, str):
+                            # Plusieurs IDs séparés par ";" ou format "activites:108;24"
+                            if ":" in c:
+                                # On récupère la partie après les ":"
+                                c = c.split(":")[1]
+                            for s in c.split(";"):
+                                if s:  # ignore les chaînes vides
+                                    resultats.append(int(s))
+                        elif hasattr(c, "pk"):  # instance de Activite
+                            resultats.append(c.pk)
+                        else:  # déjà un entier
+                            resultats.append(int(c))
+                    conditions &= Q(activite_id__in=resultats)
+                    filtre["condition"] = ""  # marque comme traité
+
                 # Filtre générique : datetime
                 for index_critere, critere in enumerate(criteres):
                     if isinstance(critere, str) and "-" in critere and ":" in critere:

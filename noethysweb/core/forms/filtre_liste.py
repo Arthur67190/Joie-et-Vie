@@ -192,6 +192,8 @@ class Formulaire(FormulaireBase, forms.Form):
         'fscolarise': {'condition': 'condition6', 'criteres': {"ECOLES": ["critere_date", "critere_ecoles"], "CLASSES": ["critere_classes"], "NIVEAUX": ["critere_date", "critere_niveaux"], "NON_SCOLARISE": ["critere_date"]}},
         'fprelevement_actif': {'condition': 'condition3', 'criteres': {"VRAI": [], "FAUX": []}},
         'datenaiss': {'condition': 'condition2', 'criteres': {"EGAL": ["critere_date"], "DIFFERENT": ["critere_date"], "SUPERIEUR": ["critere_date"], "SUPERIEUR_EGAL": ["critere_date"], "INFERIEUR": ["critere_date"], "INFERIEUR_EGAL": ["critere_date"], "COMPRIS": ["critere_date_min", "critere_date_max"], "EST_NUL": [], "EST_PAS_NUL": []}},
+        'activite': { 'condition': 'condition1', 'criteres': {'EGAL': ['critere_activites'],}
+        },
     }
 
     critere = forms.CharField(label="Critère", required=False)
@@ -230,6 +232,7 @@ class Formulaire(FormulaireBase, forms.Form):
                 if nom_filtre == "fscolarise": nom_champ = "Famille : Scolarisé"
                 if nom_filtre == "fprelevement_actif": nom_champ = "Famille : Prélèvement actif"
                 if nom_filtre == "datenaiss": nom_champ = "Individu : Date de naissance"
+                if nom_filtre == "activite": nom_champ = "Activité"
                 # Mémorisation du champ
                 dict_champs[filtre] = {'type': nom_filtre, 'label': nom_champ}
                 choix_champs.append((filtre, nom_champ))

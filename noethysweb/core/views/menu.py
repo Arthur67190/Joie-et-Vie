@@ -56,12 +56,12 @@ def GetMenuPrincipal(organisateur=None, user=None):
     # menu_renseignements.Add(code="types_sieste_liste", titre="Types de sieste", icone="file-text-o")
     # menu_renseignements.Add(code="types_regimes_alimentaires_liste", titre="Types de régimes alimentaires", icone="file-text-o")
     menu_renseignements.Add(code="categories_informations_liste", titre="Catégories PAI et automédication", icone="file-text-o")
-    menu_renseignements.Add(code="types_maladies_liste", titre="Types de maladies", icone="file-text-o")
+    #menu_renseignements.Add(code="types_maladies_liste", titre="Types de maladies", icone="file-text-o")
     menu_renseignements.Add(code="types_deductions_liste", titre="Types de déductions", icone="file-text-o")
     menu_renseignements.Add(code="types_allergies_liste", titre="Types d'allergies", icone="file-text-o")
     menu_renseignements.Add(code="types_dispmed_liste", titre="Types dispositifs médicaux", icone="file-text-o")
     menu_renseignements.Add(code="types_vaccins_liste", titre="Types de vaccins", icone="file-text-o")
-    menu_renseignements.Add(code="medecins_liste", titre="Médecins", icone="file-text-o")
+    #menu_renseignements.Add(code="medecins_liste", titre="Médecins", icone="file-text-o")
     # menu_renseignements.Add(code="assureurs_liste", titre="Assureurs", icone="file-text-o")
 
     # # Facturation
@@ -146,7 +146,7 @@ def GetMenuPrincipal(organisateur=None, user=None):
 
     # Emails
     menu_emails = menu_outils.Add(titre="Emails")
-    menu_emails.Add(code="contacts_liste", titre="Carnets d'adresses", icone="file-text-o")
+    #menu_emails.Add(code="contacts_liste", titre="Carnets d'adresses", icone="file-text-o")
     menu_emails.Add(code="editeur_emails", titre="Editeur d'Emails", icone="file-text-o")
     menu_emails.Add(code="emails_liste", titre="Liste des Emails", icone="file-text-o")
 
@@ -156,13 +156,13 @@ def GetMenuPrincipal(organisateur=None, user=None):
     # menu_sms.Add(code="sms_liste", titre="Liste des SMS", icone="file-text-o")
 
     # Outils
-    menu_historique = menu_outils.Add(titre="Historique")
-    menu_historique.Add(code="historique", titre="Historique", icone="file-text-o")
-    menu_historique.Add(code="notes_liste", titre="Notes", icone="file-text-o")
-    menu_historique.Add(code="taches_liste", titre="Tâches", icone="file-text-o")
+    #menu_historique = menu_outils.Add(titre="Historique")
+    #menu_historique.Add(code="notes_liste", titre="Notes", icone="file-text-o")
+    #menu_historique.Add(code="taches_liste", titre="Tâches", icone="file-text-o")
 
     # Maintenance
     menu_maintenance = menu_outils.Add(titre="Maintenance")
+    menu_maintenance.Add(code="historique", titre="Historique", icone="file-text-o")
     menu_maintenance.Add(code="update", titre="Mise à jour de l'application", icone="file-text-o")
     menu_maintenance.Add(code="notes_versions", titre="Notes de versions", icone="file-text-o")
     menu_maintenance.Add(code="utilisateurs_bloques_liste", titre="Utilisateurs bloqués", icone="file-text-o")
@@ -177,15 +177,15 @@ def GetMenuPrincipal(organisateur=None, user=None):
 
     # Portail
     menu_portail = menu_outils.Add(titre="Portail")
-    menu_portail.Add(code="messagerie_portail", titre="Messages non lus à traiter", icone="file-text-o")
-    menu_portail.Add(code="messages_portail_liste", titre="Messages du portail", icone="file-text-o")
+    menu_portail.Add(code="messagerie_portail", titre="Messagerie", icone="file-text-o")
+    #menu_portail.Add(code="messages_portail_liste", titre="Messages du portail", icone="file-text-o")
     menu_portail.Add(code="demandes_portail_liste", titre="Historique du portail", icone="file-text-o")
-    menu_portail.Add(code="suivi_reservations", titre="Suivi des réservations", icone="file-text-o")
+    #menu_portail.Add(code="suivi_reservations", titre="Suivi des réservations", icone="file-text-o")
 
     # Dépannage
-    menu_depannage = menu_outils.Add(titre="Dépannage")
-    menu_depannage.Add(code="correcteur", titre="Correcteur d'anomalies", icone="file-text-o")
-    menu_depannage.Add(code="liste_conso_sans_presta", titre="Liste des consommations sans prestations", icone="file-text-o")
+    #menu_depannage = menu_outils.Add(titre="Dépannage")
+    #menu_depannage.Add(code="correcteur", titre="Correcteur d'anomalies", icone="file-text-o")
+    #menu_depannage.Add(code="liste_conso_sans_presta", titre="Liste des consommations sans prestations", icone="file-text-o")
 
     # Utilitaires
     menu_utilitaires = menu_outils.Add(titre="Utilitaires")
@@ -464,7 +464,6 @@ def GetMenuPrincipal(organisateur=None, user=None):
     #menu_comptabilite_outils = menu_comptabilite.Add(titre="Outils")
     #menu_comptabilite_outils.Add(code="rapprochements_liste", titre="Rapprochement bancaire", icone="file-text-o")
 
-    # Paramétrage
     menu_comptabilite_parametrage = menu_comptabilite.Add(titre="Paramétrage")
     menu_comptabilite_parametrage.Add(code="comptes_bancaires_liste", titre="Comptes bancaires", icone="file-text-o")
     menu_comptabilite_parametrage.Add(code="modes_reglements_liste", titre="Modes de règlements", icone="file-text-o")
@@ -477,21 +476,21 @@ def GetMenuPrincipal(organisateur=None, user=None):
     #menu_comptabilite_parametrage.Add(code="releves_bancaires_liste", titre="Relevés bancaires", icone="file-text-o")
 
     # ------------------------------------ Collaborateurs ------------------------------------
-    menu_collaborateurs = menu.Add(code="collaborateurs_toc", titre="Collaborateurs", icone="users")
+    #menu_collaborateurs = menu.Add(code="collaborateurs_toc", titre="Collaborateurs", icone="users")
 
     # Liste des collaborateurs
-    menu_gestion_collaborateurs = menu_collaborateurs.Add(titre="Gestion des collaborateurs")
-    menu_gestion_collaborateurs.Add(code="collaborateur_liste", titre="Liste des collaborateurs", icone="file-text-o")
+   # menu_gestion_collaborateurs = menu_collaborateurs.Add(titre="Gestion des collaborateurs")
+    #menu_gestion_collaborateurs.Add(code="collaborateur_liste", titre="Liste des collaborateurs", icone="file-text-o")
 
     # Liste des collaborateurs
-    menu_gestion_contrats = menu_collaborateurs.Add(titre="Gestion des contrats")
-    menu_gestion_contrats.Add(code="contrats_liste", titre="Liste des contrats", icone="file-text-o")
-    menu_gestion_contrats.Add(code="fusionner_contrats_word", titre="Fusionner des contrats vers Word", icone="file-text-o")
+    #menu_gestion_contrats = menu_collaborateurs.Add(titre="Gestion des contrats")
+    #menu_gestion_contrats.Add(code="contrats_liste", titre="Liste des contrats", icone="file-text-o")
+    #menu_gestion_contrats.Add(code="fusionner_contrats_word", titre="Fusionner des contrats vers Word", icone="file-text-o")
 
     # Gestion des évènements
-    menu_gestion_evenements_collaborateurs = menu_collaborateurs.Add(titre="Gestion des évènements")
-    menu_gestion_evenements_collaborateurs.Add(code="appliquer_modele_planning", titre="Appliquer un modèle de planning", icone="file-text-o")
-    menu_gestion_evenements_collaborateurs.Add(code="planning_collaborateurs", titre="Planning des évènements", icone="file-text-o")
+    #menu_gestion_evenements_collaborateurs = menu_collaborateurs.Add(titre="Gestion des évènements")
+    #menu_gestion_evenements_collaborateurs.Add(code="appliquer_modele_planning", titre="Appliquer un modèle de planning", icone="file-text-o")
+    #menu_gestion_evenements_collaborateurs.Add(code="planning_collaborateurs", titre="Planning des évènements", icone="file-text-o")
 
 
 

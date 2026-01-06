@@ -3,12 +3,14 @@ Version 1.3.5.6.2 (05/01/2026)
 - supprimer le blocage pour l'inscription à une activité
 - certifier la fiche lors de la création
 - réduction de la taille des logs a 5MB
+- filtre sur activité
+- correctif menu
 
 Version 1.3.5.6.1 (30/12/2025)
 - bug compta helloAsso
 - ajout édition pièce
 - ajout warning questionnaire + fonction et page de correction qui va avec
-- ajout vérif fiche côté portail. (basé sur la fiche PDF)
+- ajout vérif fiche côté portail (basé sur la fiche PDF)
 
 
 Version 1.3.5.5.105 (30/12/2025)

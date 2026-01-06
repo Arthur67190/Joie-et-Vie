@@ -67,7 +67,7 @@ class Liste(Page, crud.Liste):
         return context
 
     class datatable_class(MyDatatable):
-        filtres = ["idaide", "date_debut", "date_fin", "caisse__nom", "activite__nom"]
+        filtres = ["idaide", "date_debut", "date_fin", "caisse__nom", "activite:activite"]
         beneficiaires = columns.TextColumn("Bénéficiaires", sources=None, processor='Get_beneficiaires')
         caisse = columns.TextColumn("Caisse", sources=["caisse__nom"])
         activite = columns.TextColumn("Activité", sources=["activite__nom"])

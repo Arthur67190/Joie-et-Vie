@@ -39,7 +39,7 @@ class Liste(Page, crud.Liste):
         return context
 
     class datatable_class(MyDatatable):
-        filtres = ["ipresent:individu", "fpresent:famille", "idinscription", "famille__nom", "activite__nom", "groupe__nom", "statut"]
+        filtres = ["ipresent:individu", "fpresent:famille", "idinscription", "famille__nom", "activite:activite", "groupe__nom", "statut"]
         check = columns.CheckBoxSelectColumn(label="")
         actions = columns.TextColumn("Actions", sources=None, processor="Get_actions_speciales")
         activite = columns.TextColumn("Activité", sources=["activite__nom"])
