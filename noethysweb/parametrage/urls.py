@@ -57,8 +57,10 @@ urlpatterns = [
     path('parametrage/activites/resume/<int:idactivite>', activites.Resume.as_view(), name='activites_resume'),
     path('parametrage/activites/dupliquer/<int:pk>', activites.Dupliquer.as_view(), name='activites_dupliquer'),
 
-    path('parametrage/archive/<int:idactivite>', archive.ToggleArchiveActivite.as_view(), name='activite_toggle_archive'),
+    path('parametrage/archive_activite/<int:idactivite>', archive.ToggleArchiveActivite.as_view(), name='activite_toggle_archive'),
+    path('parametrage/archive_structure/<int:idstructure>', archive.ToggleArchiveStructure.as_view(), name='structure_toggle_archive'),
     path('parametrage/desarchive/<int:idactivite>', archive.ToggleDesarchive.as_view(), name='desarchive_toggle_archive'),
+    path('parametrage/desarchive_structure/<int:idstructure>', archive.ToggleDesarchiveStructure.as_view(), name='desarchive_toggle_archive_structure'),
 
     path('parametrage/activites/generalites/<int:idactivite>', activites_generalites.Consulter.as_view(), name='activites_generalites'),
     path('parametrage/activites/generalites/modifier/<int:idactivite>', activites_generalites.Modifier.as_view(), name='activites_generalites_modifier'),

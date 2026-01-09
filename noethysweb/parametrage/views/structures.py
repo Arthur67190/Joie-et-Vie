@@ -31,7 +31,7 @@ class Liste(Page, crud.Liste):
     model = Structure
 
     def get_queryset(self):
-        return Structure.objects.filter(self.Get_filtres("Q")).annotate(nbre_activites=Count('activite'))
+        return Structure.objects_all.filter(self.Get_filtres("Q")).annotate(nbre_activites=Count('activite'))
 
     def get_context_data(self, **kwargs):
         context = super(Liste, self).get_context_data(**kwargs)
@@ -60,6 +60,27 @@ class Liste(Page, crud.Liste):
                     self.Create_bouton_modifier(url=reverse(view.url_modifier, args=[instance.pk])),
                     self.Create_bouton_supprimer(url=reverse(view.url_supprimer, args=[instance.pk])),
                 ]
+                # --- Bouton archiver / désarchiver ---
+                if instance.actif:
+                    label = ""
+                    css = "btn-warning"
+                    icon = "fa fa-archive"
+                    url_proc = reverse("structure_toggle_archive", args=[instance.pk])
+                    help_text = "Archiver la structure"
+                else:
+                    label = ""
+                    css = "btn-success"
+                    icon = "fa fa-folder-open"
+                    url_proc = reverse("desarchive_toggle_archive_structure", args=[instance.pk])
+                    help_text = "Désarchiver la structure"
+
+
+                bouton_archive = f'''
+                <a href="{url_proc}" class="btn {css} btn-sm" title="{help_text}">
+                    <i class="{icon}"></i> {label}
+                </a>
+                '''
+                html.append(bouton_archive)
             else:
                 # Afficher que l'accès est interdit
                 html = ["<span class='text-red'><i class='fa fa-minus-circle margin-r-5' title='Accès non autorisé'></i>Accès interdit</span>",]

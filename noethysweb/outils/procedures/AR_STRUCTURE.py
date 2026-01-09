@@ -34,7 +34,6 @@ class Procedure(BaseProcedure):
             activites_qs = Activite.objects_all.filter(
                 structure=structure,
                 actif=True,
-                visible=False
             )
 
             nb_activites = activites_qs.update(

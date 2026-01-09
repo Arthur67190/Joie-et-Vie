@@ -11,7 +11,7 @@ from django.views.generic.detail import DetailView
 from core.views.mydatatableview import MyDatatable, columns, helpers
 from core.views import crud
 from core.models import Activite, Inscription, ResponsableActivite, Agrement, Groupe, Evenement, CategorieTarif, NomTarif, \
-                        Unite, UniteRemplissage, Tarif, TarifLigne, CombiTarif, Ouverture, Remplissage, PortailPeriode
+                        Unite, UniteRemplissage, Tarif, TarifLigne, CombiTarif, Ouverture, Remplissage, PortailPeriode, Structure, Utilisateur
 from core.views.base import CustomView
 from parametrage.forms.activites import Formulaire
 from core.utils import utils_dates, utils_parametres
@@ -60,11 +60,19 @@ class Liste(Page, crud.Liste):
     model = Activite
     template_name = "parametrage/activite_liste1.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["afficher_renseignements_attente"] = self.afficher_renseignements_attente
+        return context
+
     def get_queryset(self):
-        # Récupère les filtres de base et les structures associées à l'utilisateur
-        queryset = Activite.objects.prefetch_related("groupes_activites").filter(
-            self.Get_filtres("Q"), structure__in=self.request.user.structures.all()
-        ).annotate(nbre_inscrits=Count("inscription")).exclude(nom__icontains="ARCHIVE")
+        user_structures = self.request.user.get_structures_all()
+
+        # Récupère toutes les activités avec objects_all et les structures filtrées
+        queryset = Activite.objects_all.prefetch_related("groupes_activites").filter(
+            self.Get_filtres("Q"),
+            structure__in=user_structures
+        )
 
         # Détermine si les renseignements d'attente doivent être affichés
         self.afficher_renseignements_attente = utils_parametres.Get(
@@ -76,7 +84,7 @@ class Liste(Page, crud.Liste):
 
         if self.afficher_renseignements_attente:
             queryset = Activite.objects_all.prefetch_related("groupes_activites").filter(
-                self.Get_filtres("Q"), structure__in=self.request.user.structures.all()
+                self.Get_filtres("Q"), structure__in=user_structures
             ).annotate(nbre_inscrits=Count("inscription"))
         return queryset
 
@@ -96,6 +104,8 @@ class Liste(Page, crud.Liste):
                 'date_fin': helpers.format_date('%d/%m/%Y'),
             }
             ordering = ["-date_fin", "nom"]
+
+
 
         def Nom_avec_alert(self, instance, *args, **kwargs):
             manquants = self.Get_elements_manquants(instance)
@@ -135,15 +145,24 @@ class Liste(Page, crud.Liste):
             ]
             # --- Bouton archiver / désarchiver ---
             if instance.actif:
-                label = "Archiver"
+                label = ""
                 css = "btn-warning"
+                icon = "fa fa-archive"
                 url_proc = reverse("activite_toggle_archive", args=[instance.pk])
-            else:
-                label = "Désarchiver"
-                css = "btn-success"
-                url_proc = reverse("desarchive_toggle_archive", args=[instance.pk])
+                help_text = "Archiver l'activité"
 
-            bouton_archive = f'<a href="{url_proc}" class="btn {css} btn-sm">{label}</a>'
+            else:
+                label = ""
+                css = "btn-success"
+                icon = "fa fa-folder-open"
+                url_proc = reverse("desarchive_toggle_archive", args=[instance.pk])
+                help_text = "Désarchiver l'activité"
+
+            bouton_archive = f'''
+            <a href="{url_proc}" class="btn {css} btn-sm" title="{help_text}">
+                <i class="{icon}"></i> {label}
+            </a>
+            '''
             html.append(bouton_archive)
 
             return self.Create_boutons_actions(html)

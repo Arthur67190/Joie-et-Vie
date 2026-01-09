@@ -401,6 +401,13 @@ class Utilisateur(AbstractUser):
     class Meta:
         permissions = utils_permissions.GetPermissionsPossibles()
 
+    def get_structures_all(self):
+        structure_ids = self.structures.through.objects.filter(
+            utilisateur=self
+        ).values_list('structure_id', flat=True)
+
+        return Structure.objects_all.filter(idstructure__in=structure_ids)
+
     def Get_adresse_exp_defaut(self):
         # Renvoie l'adresse favorite
         if self.adresse_exp:
