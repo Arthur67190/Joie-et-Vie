@@ -60,13 +60,6 @@ class Liste(Page, crud.Liste):
                     self.Create_bouton_modifier(url=reverse(view.url_modifier, args=[instance.pk])),
                     self.Create_bouton_supprimer(url=reverse(view.url_supprimer, args=[instance.pk])),
                 ]
-
-
-
-
-            else:
-                # Afficher que l'accès est interdit
-                html = ["<span class='text-red'><i class='fa fa-minus-circle margin-r-5' title=''></i></span>",]
             # --- Bouton archiver / désarchiver ---
             if instance.actif:
                 label = ""
