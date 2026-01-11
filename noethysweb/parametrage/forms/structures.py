@@ -58,7 +58,10 @@ class Formulaire(FormulaireBase, ModelForm):
             Fieldset("Portail",
                 Field('messagerie_active'),
                 Field('afficher_coords'),
-                Field('visible')
+                Field('visible'),
+                     ),
+            Fieldset("Visibilité de la structure sur Sacadoc (archivée ou active)",
+                Field('actif')
             ),
             Fieldset("Logo",
                 Div(

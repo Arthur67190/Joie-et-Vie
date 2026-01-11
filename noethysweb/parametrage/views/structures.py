@@ -54,36 +54,39 @@ class Liste(Page, crud.Liste):
 
         def Get_actions_speciales(self, instance, *args, **kwargs):
             view = kwargs["view"]
-            if view.request.user.is_superuser or instance in view.request.user.structures.all():
+            if instance.actif and view.request.user.is_superuser or instance in view.request.user.structures.all():
                 # Affiche les boutons d'action si l'utilisateur est associé à la structure
                 html = [
                     self.Create_bouton_modifier(url=reverse(view.url_modifier, args=[instance.pk])),
                     self.Create_bouton_supprimer(url=reverse(view.url_supprimer, args=[instance.pk])),
                 ]
-                # --- Bouton archiver / désarchiver ---
-                if instance.actif:
-                    label = ""
-                    css = "btn-warning"
-                    icon = "fa fa-archive"
-                    url_proc = reverse("structure_toggle_archive", args=[instance.pk])
-                    help_text = "Archiver la structure"
-                else:
-                    label = ""
-                    css = "btn-success"
-                    icon = "fa fa-folder-open"
-                    url_proc = reverse("desarchive_toggle_archive_structure", args=[instance.pk])
-                    help_text = "Désarchiver la structure"
 
 
-                bouton_archive = f'''
-                <a href="{url_proc}" class="btn {css} btn-sm" title="{help_text}">
-                    <i class="{icon}"></i> {label}
-                </a>
-                '''
-                html.append(bouton_archive)
+
+
             else:
                 # Afficher que l'accès est interdit
-                html = ["<span class='text-red'><i class='fa fa-minus-circle margin-r-5' title='Accès non autorisé'></i>Accès interdit</span>",]
+                html = ["<span class='text-red'><i class='fa fa-minus-circle margin-r-5' title=''></i></span>",]
+            # --- Bouton archiver / désarchiver ---
+            if instance.actif:
+                label = ""
+                css = "btn-warning"
+                icon = "fa fa-archive"
+                url_proc = reverse("structure_toggle_archive", args=[instance.pk])
+                help_text = "Archiver la structure"
+            else:
+                label = ""
+                css = "btn-success"
+                icon = "fa fa-folder-open"
+                url_proc = reverse("desarchive_toggle_archive_structure", args=[instance.pk])
+                help_text = "Désarchiver la structure"
+
+            bouton_archive = f'''
+            <a href="{url_proc}" class="btn {css} btn-sm" title="{help_text}">
+                <i class="{icon}"></i> {label}
+            </a>
+            '''
+            html.append(bouton_archive)
             return self.Create_boutons_actions(html)
 
         def Format_visible(self, instance, *args, **kwargs):
@@ -95,6 +98,7 @@ class Ajouter(Page, crud.Ajouter):
             # Enregistre d'abord la structure
             redirect = super(Ajouter, self).form_valid(form)
             # Associe la structure à l'utilisateur qui vient de la créer
+            self.request.user.structures_admin.add(form.instance)
             self.request.user.structures.add(form.instance)
             return redirect
 
