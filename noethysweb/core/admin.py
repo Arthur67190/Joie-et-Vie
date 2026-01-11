@@ -39,7 +39,7 @@ class UserEditForm(UserChangeForm):
         widget=admin.widgets.FilteredSelectMultiple('permissions', False), required=False)
 
     structures_admin = forms.ModelMultipleChoiceField(
-        queryset=Structure.objects.all().order_by("nom"), label="Structures",
+        queryset=Structure.objects_all.all().order_by("nom"), label="Structures",
         widget=admin.widgets.FilteredSelectMultiple('structures', False), required=False)
 
     class Meta:

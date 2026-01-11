@@ -23,7 +23,7 @@ class Formulaire(FormulaireBase, ModelForm):
         model = Activite
         fields = ["portail_inscriptions_affichage", "visible", "portail_inscriptions_date_debut", "portail_inscriptions_date_fin",
                   "portail_reservations_limite", "portail_inscriptions_bloquer_si_complet", "portail_inscriptions_imposer_pieces",
-                  "reattribution_auto", "reattribution_adresse_exp", "reattribution_delai", "reattribution_modele_email","interne","maitrise", "pay_org_tpe", "pay", "pay_org"
+                  "reattribution_auto", "reattribution_adresse_exp", "reattribution_delai", "reattribution_modele_email","interne","maitrise", "pay_org_tpe", "pay", "actif", "pay_org"
                   ]
         help_texts = {
             "portail_inscriptions_affichage": "Sélectionnez Autoriser pour permettre aux usagers de demander une inscription à cette activité depuis le portail. Cette demande devra être validée par un utilisateur.",
@@ -69,6 +69,11 @@ class Formulaire(FormulaireBase, ModelForm):
             ),
             Fieldset("Visibilité de l'activité sur le portail",
                      Field("visible"),
+                     ),
+
+            Fieldset("Visibilité de l'activité sur Sacadoc (archivée ou active)",
+                              Field("actif"),
+
             ),
             Fieldset("Divers",
                      Field("interne"),

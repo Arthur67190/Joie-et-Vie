@@ -25,16 +25,16 @@ class Formulaire(FormulaireBase, ModelForm):
         self.helper.form_id = 'activites_generalites_form'
         self.helper.form_method = 'post'
 
-        self.fields['afficher_renseignements_attente'] = forms.BooleanField(
-            label="Afficher les activités archivées",
-            required=False,
-            initial=utils_parametres.Get(
-                nom="afficher_renseignements_attente",
-                categorie="renseignements_attente",
-                utilisateur=self.request.user,
-                valeur=False  # décoché par défaut
-            )
-        )
+        # self.fields['afficher_renseignements_attente'] = forms.BooleanField(
+        #     label="Afficher les activités archivées",
+        #     required=False,
+        #     initial=utils_parametres.Get(
+        #         nom="afficher_renseignements_attente",
+        #         categorie="renseignements_attente",
+        #         utilisateur=self.request.user,
+        #         valeur=False  # décoché par défaut
+        #     )
+        # )
 
         # Affichage
         self.helper.layout = Layout(

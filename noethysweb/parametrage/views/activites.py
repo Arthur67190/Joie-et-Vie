@@ -137,12 +137,14 @@ class Liste(Page, crud.Liste):
             return ", ".join([groupe.nom for groupe in instance.groupes_activites.all()])
 
         def Get_actions_speciales(self, instance, *args, **kwargs):
-            """ Inclut la duplication dans les boutons d'actions """
-            html = [
-                self.Create_bouton_modifier(url=reverse(kwargs["view"].url_modifier, args=[instance.pk])),
-                self.Create_bouton_supprimer(url=reverse(kwargs["view"].url_supprimer, args=[instance.pk])),
-                self.Create_bouton_dupliquer(url=reverse(kwargs["view"].url_dupliquer, args=[instance.pk])),
-            ]
+            html = []
+            if instance.actif:
+                """ Inclut la duplication dans les boutons d'actions """
+                html = [
+                    self.Create_bouton_modifier(url=reverse(kwargs["view"].url_modifier, args=[instance.pk])),
+                    self.Create_bouton_supprimer(url=reverse(kwargs["view"].url_supprimer, args=[instance.pk])),
+                    self.Create_bouton_dupliquer(url=reverse(kwargs["view"].url_dupliquer, args=[instance.pk])),
+                ]
             # --- Bouton archiver / désarchiver ---
             if instance.actif:
                 label = ""
