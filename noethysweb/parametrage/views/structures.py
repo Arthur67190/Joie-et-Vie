@@ -54,6 +54,7 @@ class Liste(Page, crud.Liste):
 
         def Get_actions_speciales(self, instance, *args, **kwargs):
             view = kwargs["view"]
+            html = []
             if instance.actif and view.request.user.is_superuser or instance in view.request.user.structures.all():
                 # Affiche les boutons d'action si l'utilisateur est associé à la structure
                 html = [
