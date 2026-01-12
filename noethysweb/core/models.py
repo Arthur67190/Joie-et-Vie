@@ -4135,7 +4135,7 @@ class ComptaOperation(models.Model):
     virement = models.ForeignKey(ComptaVirement, verbose_name="Virement", on_delete=models.CASCADE, blank=True, null=True)
     document = models.FileField(verbose_name="Pièce justificative", storage=get_storage("justifs"), upload_to=get_uuid_path, blank=True, null=True)
     avance = models.ForeignKey(ComptaAvance, verbose_name="Avance", on_delete=models.PROTECT, blank=True, null=True)
-    remb_avance = models.IntegerField( verbose_name="Référence de régularisation", blank=True, null=True, help_text="Identifiant utilisé pour relier les opérations entre elles (ex: ID de régularisation)")
+    remb_avance = models.IntegerField( verbose_name="Référence de régularisation", default=0, blank=True, null=True, help_text="Identifiant utilisé pour relier les opérations entre elles (ex: ID de régularisation)")
     regul_avance = models.BooleanField(verbose_name="Opération de régularisation d'avance", default=False)
     class Meta:
         db_table = "compta_operations"

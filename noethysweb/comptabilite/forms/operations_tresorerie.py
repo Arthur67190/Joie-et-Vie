@@ -9,7 +9,7 @@ from django.forms import ModelForm
 from django.db.models import Q
 from core.forms.base import FormulaireBase
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Hidden, Fieldset, Div
+from crispy_forms.layout import Layout, Hidden, Fieldset, Div, HTML
 from crispy_forms.bootstrap import Field, PrependedText
 from core.utils.utils_commandes import Commandes
 from core.utils import utils_preferences
@@ -109,6 +109,8 @@ class Formulaire(FormulaireBase, ModelForm):
         self.helper.label_class = 'col-md-2'
         self.helper.field_class = 'col-md-10'
 
+        self.fields["mode"].required = True
+
         # Type
         if self.instance.pk:
             type = self.instance.type
@@ -170,33 +172,44 @@ class Formulaire(FormulaireBase, ModelForm):
             Q(type=type) & (Q(structure__in=self.request.user.structures.all()) | Q(structure__isnull=True))
         ).order_by("nom")
 
+        fields_general = []
+
+        if "num_piece" in self.fields:
+            fields_general.append(Field("num_piece"))
+
+        fields_general += [
+            Field("date"),
+            Field("libelle"),
+            Field("mode"),
+        ]
+
+        if "document" in self.fields:
+            fields_general.append(Field("document"))
+
+        fields_general += [
+            Field("avance"),
+            PrependedText("montant", utils_preferences.Get_symbole_monnaie()),
+        ]
+
+
         # Affichage
         self.helper.layout = Layout(
             Commandes(annuler_url="{{ view.get_success_url }}"),
             Hidden("compte", value=idcompte),
             Hidden("type", value=type),
-            Fieldset("Généralités",
-                     Field("num_piece"),
-                Field("date"),
-                Field("libelle"),
-                # Field("tiers"),
-                Field("mode"),
-                Field("document"),
-                Field("avance"),
 
-                     PrependedText("montant", utils_preferences.Get_symbole_monnaie()),
+            Fieldset(
+                "Généralités",
+                *fields_general
             ),
-            Fieldset("Ventilation",
+
+            Fieldset(
+                "Ventilation",
                 Div(
                     Formset("formset_categories"),
                     style="margin-bottom:20px;"
                 ),
             ),
-            # Fieldset("Options",
-            #     Field("releve"),
-            #     Field("ref_piece"),
-            #     Field("observations"),
-            # ),
         )
 
     def clean(self):

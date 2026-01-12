@@ -226,12 +226,14 @@ class Page(crud.Page):
 
     def get_success_url(self):
         """ Renvoie vers la liste après le formulaire """
-        url = self.url_liste
         if "SaveAndNew" in self.request.POST:
-            if getattr(self, "type", None):
+            # Redirection selon le type d'opération
+            if getattr(self, "type", None) == "debit":
                 url = self.url_ajouter_debit
             else:
                 url = self.url_ajouter_credit
+        else:
+            url = self.url_liste
         return reverse_lazy(url, kwargs={'categorie': self.Get_categorie()})
 
     def form_valid(self, form):
@@ -501,9 +503,17 @@ class Liste(Page, crud.Liste):
 
 class Ajouter(Page, crud.Ajouter):
     form_class = Formulaire
-    type = "debit"
+    type = None
+    def dispatch(self, request, *args, **kwargs):
+        # récupère le type passé depuis as_view(type=...)
+        self.type = kwargs.pop('type', getattr(self, 'type', 'debit'))
+        return super().dispatch(request, *args, **kwargs)
 
-
+    def get_form_kwargs(self, **kwargs):
+        form_kwargs = super().get_form_kwargs(**kwargs)
+        # Passe le type au formulaire
+        form_kwargs['type'] = self.type
+        return form_kwargs
 class Modifier(Page, crud.Modifier):
     form_class = Formulaire
 
