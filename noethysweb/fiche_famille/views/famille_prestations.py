@@ -256,6 +256,7 @@ class ClasseCommune(Page):
                     instance.prestation = self.object
                     instance.famille = self.object.famille
                     instance.date = self.object.date
+                    instance.remb = False
                     instance.save()
                     formline.save_m2m()
 
