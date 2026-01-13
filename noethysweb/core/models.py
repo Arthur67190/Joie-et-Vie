@@ -2626,6 +2626,7 @@ class Deduction(models.Model):
     montant = models.DecimalField(verbose_name="Montant", max_digits=10, decimal_places=2, default=0.0)
     label = models.ForeignKey(TypeDeduction, verbose_name="Label", on_delete=models.PROTECT, blank=True, null=True)
     aide = models.ForeignKey(Aide, verbose_name="Aide", on_delete=models.PROTECT, blank=True, null=True)
+    remb = models.BooleanField(verbose_name="Déduction remboursée", default=False, help_text="")
 
     class Meta:
         db_table = 'deductions'

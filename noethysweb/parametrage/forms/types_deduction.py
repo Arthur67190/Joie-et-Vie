@@ -30,12 +30,14 @@ class Formulaire(FormulaireBase, ModelForm):
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-md-2'
         self.helper.field_class = 'col-md-10'
-
+        self.fields["structure"].required = True
         # Affichage
         self.helper.layout = Layout(
             Commandes(annuler_url="{% url 'types_deductions_liste' %}"),
             Fieldset("Généralités",
                 Field('nom'),
+                     Field('structure'),
+                     Field('remb'),
             ),
         )
 

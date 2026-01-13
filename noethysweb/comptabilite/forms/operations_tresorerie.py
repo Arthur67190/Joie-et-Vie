@@ -23,7 +23,7 @@ from core.forms.select2 import Select2MultipleWidget
 from core.forms.base import FormulaireBase
 from core.utils.utils_commandes import Commandes
 from core.utils import utils_preferences
-from core.models import ComptaBudget, ComptaAnalytique, ComptaCategorieBudget, ComptaCategorie
+from core.models import ComptaBudget, ComptaAnalytique, ComptaCategorieBudget, ComptaCategorie, Deduction, TypeDeduction
 from core.widgets import DatePickerWidget, Formset
 
 class CategorieForm(FormulaireBase, ModelForm):
@@ -84,6 +84,12 @@ class Formulaire(FormulaireBase, ModelForm):
         label="Catégorie"
     )
 
+    deduction = forms.ModelChoiceField(
+        queryset=TypeDeduction.objects.none(),
+        required=False,
+        label="Déduction"
+    )
+
     class Meta:
         model = ComptaOperation
         fields = "__all__"
@@ -94,6 +100,7 @@ class Formulaire(FormulaireBase, ModelForm):
             "mode": Select_avec_commandes_advanced(attrs={"id_form": "modes_reglements_form", "module_form": "parametrage.forms.modes_reglements", "nom_objet": "un mode de règlement", "champ_nom": "label"}),
             "avance": Select_avec_commandes_advanced(attrs={"id_form": "avance_form", "module_form": "parametrage.forms.avance", "nom_objet": "une personne", "champ_nom": "nom"}),
             "document": forms.ClearableFileInput(),
+
         }
 
     def __init__(self, *args, **kwargs):
@@ -118,6 +125,15 @@ class Formulaire(FormulaireBase, ModelForm):
         if "document" in self.fields:
             self.fields["document"].help_text = "Formats acceptés : PDF, JPG, PNG "
 
+        self.fields["deduction"].queryset = Deduction.objects.filter(
+            label__remb=True,  # filtre sur le champ remb de TypeDeduction
+            label__structure__in=self.request.user.structures.all(),  # filtre par structures
+            remb=False
+        ).order_by("label")
+
+        self.fields["deduction"].label_from_instance = lambda obj: (
+            f"Déduction de {obj.montant}€ pour la famille {obj.famille.nom}"
+        )
 
         # --- Gestion du numéro de pièce ---
         if type == "debit":
@@ -188,6 +204,7 @@ class Formulaire(FormulaireBase, ModelForm):
 
         fields_general += [
             Field("avance"),
+            Field("deduction"),
             PrependedText("montant", utils_preferences.Get_symbole_monnaie()),
         ]
 
@@ -215,6 +232,7 @@ class Formulaire(FormulaireBase, ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         montant = cleaned_data.get("montant")
+        deduction = cleaned_data.get("deduction")
 
         # --- Vérifie que le montant est renseigné ---
         if not montant:
@@ -231,4 +249,11 @@ class Formulaire(FormulaireBase, ModelForm):
                 if data and not data.get("DELETE", False):
                     v_montant = data.get("montant") or 0
                     ventilations.append(v_montant)
+        # --- Si une déduction est sélectionnée, vérifier le montant ---
+        if deduction:
+            if montant != deduction.montant:
+                self.add_error(
+                    "montant",
+                    f"Le montant saisi ({montant}€) doit correspondre au montant de la déduction ({deduction.montant}€)."
+                )
         return cleaned_data

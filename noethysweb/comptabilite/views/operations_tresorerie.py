@@ -290,7 +290,22 @@ class Page(crud.Page):
             return self.form_invalid(form)
 
         # --- Sauvegarde du formulaire principal ---
-        self.object = form.save()
+        self.object = form.save(commit=False)
+
+        # --- Si une déduction est sélectionnée ---
+        deduction = form.cleaned_data.get("deduction")
+        if deduction:
+            # 1️⃣ On marque la déduction comme remboursée
+            deduction.remb = True
+            deduction.save(update_fields=["remb"])
+
+            # 2️⃣ On modifie le libellé de l'opération pour ajouter "(Déduction XX€)"
+            montant_deduction = deduction.montant
+            famille_nom = deduction.famille.nom
+            self.object.libelle = f"{self.object.libelle} (Famille : {famille_nom})"
+
+        # --- Sauvegarde définitive ---
+        self.object.save()
 
         # --- Récupération des ventilations existantes liées à cette opération ---
         ventilations_existantes = {
