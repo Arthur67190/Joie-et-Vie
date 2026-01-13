@@ -21,17 +21,37 @@ from django.shortcuts import redirect, render
 def ajouter_type_deduction(request):
     if request.method == 'POST':
         nom = request.POST.get('nom_type_deduction', '').strip()
-        if not nom:
-            return JsonResponse({'success': False, 'message': 'Le nom est requis.'})
+        structure_id = request.POST.get('structure')
+        remb = request.POST.get('remb') == 'true'
 
-        # Vérifier si un nom similaire existe déjà (insensible à la casse)
-        if TypeDeduction.objects.filter(nom__iexact=nom).exists():
-            return JsonResponse({'success': False, 'message': 'Ce type de déduction existe déjà.'})
+        if not nom or not structure_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Le nom et la structure sont requis.'
+            })
 
-        TypeDeduction.objects.create(nom=nom)
-        return JsonResponse({'success': True, 'message': 'Type de déduction ajouté avec succès.'})
+        if TypeDeduction.objects.filter(
+            nom__iexact=nom,
+            structure_id=structure_id
+        ).exists():
+            return JsonResponse({
+                'success': False,
+                'message': 'Ce type existe déjà pour cette structure.'
+            })
 
-    return JsonResponse({'success': False, 'message': 'Méthode non autorisée.'}, status=405)
+        TypeDeduction.objects.create(
+            nom=nom,
+            structure_id=structure_id,
+            remb=remb
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Type de déduction ajouté avec succès.'
+        })
+
+    return JsonResponse({'success': False}, status=405)
+
 
 def Supprimer_consommation(request):
     """ Supprime les ou une consommation associée à la prestation """
@@ -202,15 +222,21 @@ class ClasseCommune(Page):
     template_name = "parametrage/famille_edit.html"
 
     def get_context_data(self, *args, **kwargs):
-        context_data = super(ClasseCommune, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
 
-        # Traitement du Combi aides
+        structure = self.request.user.structures.all()
+
         if self.request.POST:
-            context_data['formset_combi'] = FORMSET_DEDUCTIONS(self.request.POST, instance=self.object)
+            context['formset_combi'] = FORMSET_DEDUCTIONS(
+                self.request.POST,
+                instance=self.object,
+                structure=structure            )
         else:
-            context_data['formset_combi'] = FORMSET_DEDUCTIONS(instance=self.object)
+            context['formset_combi'] = FORMSET_DEDUCTIONS(
+                instance=self.object,
+                structure=structure            )
 
-        return context_data
+        return context
 
     def form_valid(self, form):
         formset_combi = FORMSET_DEDUCTIONS(self.request.POST, instance=self.object)

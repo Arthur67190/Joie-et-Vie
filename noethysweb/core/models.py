@@ -816,6 +816,8 @@ class TypeMaladie(models.Model):
 class TypeDeduction(models.Model):
     idtype_deduction = models.AutoField(verbose_name="ID", db_column='IDtype_deduction', primary_key=True)
     nom = models.CharField(verbose_name="Nom", max_length=200)
+    structure = models.ForeignKey(Structure, verbose_name="Structure associée", blank=False, null=False, on_delete=models.PROTECT)
+    remb = models.BooleanField(verbose_name="Déduction payée par un tier", default=True, help_text="")
 
     class Meta:
         db_table = 'types_deductions'

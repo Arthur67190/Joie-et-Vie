@@ -24,48 +24,61 @@ from crispy_forms.bootstrap import Field
 
 
 class DeductionForm(forms.ModelForm):
-
     class Meta:
         model = Deduction
         exclude = []
 
-    def __init__(self, *args, **kwargs):
-        super(DeductionForm, self).__init__(*args, **kwargs)
+    def __init__(self, *args, structure=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.structure = structure
         self.helper = FormHelper()
         self.helper.form_show_labels = False
         self.helper.form_class = "formset_deductions"
         self.helper.form_method = 'post'
 
+        if 'label' in self.fields:  # label = ForeignKey vers TypeDeduction
+            qs = TypeDeduction.objects.all()
+            if self.structure:
+                qs = qs.filter(structure__in=self.structure)
+            self.fields['label'].queryset = qs
+            self.fields['label'].label = "Type de déduction"
     def clean(self):
-        # if self.cleaned_data.get('DELETE') == False:
-        #
-        #     # Vérifie qu'au moins une unité a été saisie
-        #     if len(self.cleaned_data["unites"]) == 0:
-        #         raise forms.ValidationError('Vous devez sélectionner au moins une unité')
-        #
         return self.cleaned_data
 
 
 class BaseDeductionFormSet(BaseInlineFormSet):
-    def __init__(self, *args, **kwargs):
-        super(BaseDeductionFormSet, self).__init__(*args, **kwargs)
+    def __init__(self, *args, structure=None, **kwargs):
+        self.structure = structure  # garde la structure ici
+        super().__init__(*args, **kwargs)
 
+    def _construct_form(self, i, **kwargs):
+        # passe la structure au form
+        kwargs['structure'] = self.structure
+        return super()._construct_form(i, **kwargs)
     def clean(self):
         for form in self.forms:
-            if self._should_delete_form(form) == False:
-
-                # Vérification de la validité de la ligne
-                if form.is_valid() == False or len(form.cleaned_data) == 0:
+            if not self._should_delete_form(form):
+                if not form.is_valid() or len(form.cleaned_data) == 0:
                     for field, erreur in form.errors.as_data().items():
                         message = erreur[0].message
                         form.add_error(field, message)
                         return
 
 
+FORMSET_DEDUCTIONS = inlineformset_factory(
+    Prestation,
+    Deduction,
+    form=DeductionForm,
+    fk_name="prestation",
+    formset=BaseDeductionFormSet,
+    fields=["montant", "label"],  # label = TypeDeduction
+    extra=1,
+    min_num=0,
+    can_delete=True,
+    validate_max=True,
+    can_order=False
+)
 
-FORMSET_DEDUCTIONS = inlineformset_factory(Prestation, Deduction, form=DeductionForm, fk_name="prestation", formset=BaseDeductionFormSet,
-                                            fields=["montant", "label"], extra=1, min_num=0,
-                                            can_delete=True, validate_max=True, can_order=False)
 
 
 
@@ -87,7 +100,6 @@ class Formulaire(FormulaireBase, ModelForm):
         {"lang": "fr", "data-width": "100%", "data-minimum-input-length": 0}, search_fields=['nom_tarif__nom__icontains'],
         dependent_fields={"tarif": "tarif"}), queryset=TarifLigne.objects.all(), required=False,
         help_text="Attention, modifier ici la ligne tarifaire ne changera pas automatiquement le montant de la prestation.")
-    nom_type_deduction = forms.CharField(label="Ajouter un type de déduction ", help_text="Merci de vérifier que le nouveau type de déduction n'existe pas et qu'il est compréhensible de tous.", max_length=255, required=False)
 
 
     class Meta:
@@ -190,16 +202,6 @@ class Formulaire(FormulaireBase, ModelForm):
 
                 ),
             ),
-            Fieldset("Déductions paramètres",
-                     Div(
-                         Field('nom_type_deduction', css_class="form-control form-control-sm mb-2",
-                               style="white-space: nowrap;",),  # Champ en haut sur une seule ligne
-                         HTML(
-                             "<button type='button' class='btn btn-sm btn-primary' id='add_type_deduction'>Ajouter le type de déduction</button>"),
-                         # Bouton centré en dessous
-                         css_class="text-center"  # Centre le bouton sous le champ
-                     ),
-                     ),
             HTML(EXTRA_HTML),
         )
 
@@ -213,26 +215,155 @@ class Formulaire(FormulaireBase, ModelForm):
         return self.cleaned_data
 
 EXTRA_HTML = """
+<div class="text-center my-3">
+    <button type="button"
+            class="btn btn-sm btn-primary"
+            data-toggle="modal"
+            data-target="#modalTypeDeduction">
+        Ajouter un nouveau type de déduction
+    </button>
+</div>
+
+<div class="modal fade" id="modalTypeDeduction" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Ajouter un type de déduction</h5>
+        <button type="button" class="close" data-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Nom -->
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">
+            Nom
+          </label>
+          <div class="col-sm-8">
+            <input type="text"
+                   id="nom_type_deduction_modal"
+                   class="form-control form-control-sm"
+                   placeholder="Ex : Aide commune Obernai">
+          </div>
+        </div>
+
+        <!-- Structure -->
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">
+            Structure
+          </label>
+          <div class="col-sm-8">
+            <select id="structure_type_deduction_modal"
+                    class="form-control form-control-sm">
+              <option value="">---------</option>
+              {% for structure in request.user.structures.all %}
+                  <option value="{{ structure.pk }}">{{ structure }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Remboursée par un tiers -->
+        <div class="form-group row">
+          <div class="col-sm-4"></div>
+          <div class="col-sm-8">
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox"
+                     class="custom-control-input"
+                     id="remb_type_deduction_modal"
+                     checked>
+              <label class="custom-control-label"
+                     for="remb_type_deduction_modal">
+                Déduction payée par un tiers
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="alert d-none mt-2" id="typeDeductionMessage"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button"
+                class="btn btn-secondary btn-sm"
+                data-dismiss="modal">
+          Annuler
+        </button>
+        <button type="button"
+                class="btn btn-primary btn-sm"
+                id="saveTypeDeduction">
+          Enregistrer
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
 <script>
-//script type deduction
-    $(document).ready(function() {
-        $('#add_type_deduction').click(function() {
-            // Soumettre uniquement le champ nom_type_deduction
-            var nom_type_deduction = $('#id_nom_type_deduction').val();
-            if (nom_type_deduction) {
-                $.post("{% url 'ajouter_type_deduction' %}", {
-                    'nom_type_deduction': nom_type_deduction,
-                    'csrfmiddlewaretoken': '{{ csrf_token }}'
-                }, function(response) {
-                    // Traiter la réponse du serveur, afficher message succès/erreur
-                    alert(response.message);
-                    location.reload();  // Recharger la page
-                });
-            } else {
-                alert("Veuillez entrer un nom pour le type de déduction.");
-            }
-        });
+//type déduction 
+$(document).ready(function () {
+
+    $('#saveTypeDeduction').click(function () {
+
+        let data = {
+            nom_type_deduction: $('#nom_type_deduction_modal').val().trim(),
+            structure: $('#structure_type_deduction_modal').val(),
+            remb: $('#remb_type_deduction_modal').is(':checked'),
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        };
+
+        let messageBox = $('#typeDeductionMessage');
+        messageBox.addClass('d-none').removeClass('alert-success alert-danger');
+
+        if (!data.nom_type_deduction || !data.structure) {
+            messageBox
+                .removeClass('d-none')
+                .addClass('alert alert-danger')
+                .text("Le nom et la structure sont obligatoires.");
+            return;
+        }
+
+        $.post("{% url 'ajouter_type_deduction' %}", data)
+            .done(function (response) {
+                if (response.success) {
+                    messageBox
+                        .removeClass('d-none')
+                        .addClass('alert alert-success')
+                        .text(response.message);
+
+                    setTimeout(function () {
+                        $('#modalTypeDeduction').modal('hide');
+                        location.reload();
+                    }, 800);
+                } else {
+                    messageBox
+                        .removeClass('d-none')
+                        .addClass('alert alert-danger')
+                        .text(response.message);
+                }
+            })
+            .fail(function () {
+                messageBox
+                    .removeClass('d-none')
+                    .addClass('alert alert-danger')
+                    .text("Erreur serveur.");
+            });
     });
+
+});
+
 
 
 // Sur sélection de l'individu
