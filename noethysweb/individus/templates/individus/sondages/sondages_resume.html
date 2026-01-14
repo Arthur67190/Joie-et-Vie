@@ -15,6 +15,45 @@
 {% endblock scripts %}
 
 {% block contenu_reponses %}
+    {# Bouton de commande #}
+    {% if idsondage %}
+        <div class="buttonHolder" style="margin-bottom: 15px;">
+            <button class="btn btn-primary" onclick="traiterRelance()" title="Relancer par mail les familles sans réponses"><i class="fa fa-envelope margin-r-5"></i>Relancer par mail les familles sans réponses</button>
+        </div>
+    {% endif %}
+
+    <script type="text/javascript" src="{% static 'lib/bootbox/bootbox.min.js' %}"></script>
+    <script>
+        function getCSRFToken() {
+            return document.cookie.split('; ').find(row => row.startsWith('csrftoken='))
+                   ?.split('=')[1] || '';
+        }
+
+        // Relancer
+        function traiterRelance() {
+            var idsondage = {{ idsondage|default:"null" }};
+            if (!idsondage) {
+                toastr.error("Veuillez sélectionner un formulaire");
+                return;
+            }
+            $.ajax({
+                type: "POST",
+                url: "{% url 'ajax_sondages_relance' %}",
+                data: {
+                    idsondage: idsondage,
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+                datatype: "json",
+                success: function(data){
+                    window.location.href = data.url;
+                },
+                error: function(data) {
+                    toastr.error(data.responseJSON.erreur);
+                }
+            })
+        };
+    </script>
+
     {% if data %}
         {% for element in data %}
 

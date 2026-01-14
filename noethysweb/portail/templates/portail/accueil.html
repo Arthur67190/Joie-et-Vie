@@ -203,6 +203,22 @@
                     </div>
                 </div>
             {% endif %}
+
+            {# Sondages manquants #}
+            {% if nbre_sondages_manquants > 0 %}
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>{{ nbre_sondages_manquants }}</h3>
+                            <p>
+                                {% blocktranslate count counter=nbre_sondages_manquants %}Sondage manquant{% plural %}Sondages manquants{% endblocktranslate %}
+                            </p>
+                        </div>
+                        <div class="icon"><i class="fa fa-file-text-o"></i></div>
+                        <a href="{% url 'portail_sondages' %}" class="small-box-footer">{% trans "Consulter" %} <i class="fa fa-arrow-circle-right"></i></a>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     {% endif %}
 

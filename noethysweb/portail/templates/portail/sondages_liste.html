@@ -1,0 +1,108 @@
+{% extends "portail/page.html" %}
+{% load i18n %}
+{% load static %}
+{% load embed %}
+
+{% block contenu_page %}
+
+    {% if sondages_famille or sondages_individu %}
+        <p class="text-muted" style="margin-top: 0.2rem; font-size: 0.9rem;">
+            {% trans "Voici la liste des formulaires qui nécessitent votre attention." %}
+        </p>
+
+        {# Sondages de type famille #}
+        {% if sondages_famille %}
+            {% embed 'core/box.html' with box_titre=True %}
+                {% block box_theme %}card-outline card-primary{% endblock %}
+                {% block box_titre %}
+                    {% trans "Formulaires familiaux" %}
+                {% endblock %}
+                {% block box_contenu %}
+                    <p class="text-muted">
+                        {% trans "Ces formulaires concernent l'ensemble de votre famille." %}
+                    </p>
+                    <div class="list-group">
+                        {% for sondage_info in sondages_famille %}
+                            <a href="{% url 'portail_sondage' code=sondage_info.code %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">
+                                        <i class="fa fa-file-text-o text-primary mr-2"></i>
+                                        {{ sondage_info.titre }}
+                                    </h5>
+                                    <small class="text-muted">
+                                        <i class="fa fa-arrow-circle-right"></i>
+                                    </small>
+                                </div>
+                                {% if sondage_info.sondage.description %}
+                                    <p class="mb-1">{{ sondage_info.sondage.description|truncatewords:20 }}</p>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endblock box_contenu %}
+            {% endembed %}
+        {% endif %}
+
+        {# Sondages de type individu #}
+        {% if sondages_individu %}
+            {% embed 'core/box.html' with box_titre=True %}
+                {% block box_theme %}card-outline card-info{% endblock %}
+                {% block box_titre %}
+                    {% trans "Formulaires individuels" %}
+                {% endblock %}
+                {% block box_contenu %}
+                    <p class="text-muted">
+                        {% trans "Ces formulaires doivent être remplis pour chaque membre concerné de votre famille." %}
+                    </p>
+                    {% for sondage_info in sondages_individu %}
+                        <div class="mb-4">
+                            <h5 class="mb-2">
+                                <i class="fa fa-file-text-o text-info mr-2"></i>
+                                {{ sondage_info.titre }}
+                            </h5>
+                            {% if sondage_info.sondage.description %}
+                                <p class="text-muted mb-2">{{ sondage_info.sondage.description|truncatewords:20 }}</p>
+                            {% endif %}
+                            <div class="list-group">
+                                {% for individu in sondage_info.individus %}
+                                    <a href="{% url 'portail_sondage_questions' code=sondage_info.code idindividu=individu.pk %}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <span>
+                                                <i class="fa fa-user text-info mr-2"></i>
+                                                {{ individu.prenom }} {{ individu.nom }}
+                                            </span>
+                                            <small class="text-muted">
+                                                <i class="fa fa-arrow-circle-right"></i>
+                                            </small>
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% if not forloop.last %}
+                            <hr>
+                        {% endif %}
+                    {% endfor %}
+                {% endblock box_contenu %}
+            {% endembed %}
+        {% endif %}
+
+    {% else %}
+        {% embed 'core/box.html' with box_titre=True %}
+            {% block box_theme %}card-outline card-success{% endblock %}
+            {% block box_titre %}
+                {% trans "Formulaires" %}
+            {% endblock %}
+            {% block box_contenu %}
+                <p class="text-success">
+                    <i class="fa fa-check-circle mr-2"></i>
+                    <strong>{% trans "Aucun formulaire manquant" %}</strong>
+                </p>
+                <p class="text-muted">
+                    {% trans "Vous avez complété tous les formulaires requis." %}
+                </p>
+            {% endblock box_contenu %}
+        {% endembed %}
+    {% endif %}
+
+{% endblock contenu_page %}

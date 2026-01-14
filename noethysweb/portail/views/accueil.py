@@ -17,7 +17,7 @@ from individus.utils import (
     utils_pieces_manquantes,
     utils_vaccinations,
 )
-from portail.utils import utils_approbations, utils_renseignements_manquants, utils_questionnaires_manquants
+from portail.utils import utils_approbations, utils_renseignements_manquants, utils_questionnaires_manquants, utils_sondages_manquants
 from portail.views.base import CustomView
 
 
@@ -89,6 +89,9 @@ class Accueil(CustomView, TemplateView):
         # Adhésions manquantes
         if context["parametres_portail"].get("cotisations_afficher_page", False):
             context["cotisations_manquantes"] = utils_cotisations_manquantes.Get_cotisations_manquantes(famille=self.request.user.famille, exclure_individus=self.request.user.famille.individus_masques.all())
+
+        # Sondages manquants
+        context["nbre_sondages_manquants"] = len(utils_sondages_manquants.Get_sondages_manquants(famille=self.request.user.famille))
 
             # Articles
         conditions = Q(structure__visible=True) & Q(statut="publie") & Q(date_debut__lte=datetime.datetime.now()) & (Q(date_fin__isnull=True) | Q(date_fin__gte=datetime.datetime.now()))

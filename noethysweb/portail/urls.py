@@ -39,7 +39,8 @@ urlpatterns = [
     # Album photos
     path('album/<str:code>', album.View.as_view(), name='portail_album'),
 
-    # Sondage
+    # Sondages
+    path('sondages', sondage.View_liste.as_view(), name='portail_sondages'),
     path('sondage/<str:code>', sondage.View_introduction.as_view(), name='portail_sondage'),
     path('sondage/questions/<str:code>', sondage.View_questions.as_view(), name='portail_sondage_questions'),
     path('sondage/questions/<str:code>/<int:idindividu>', sondage.View_questions.as_view(), name='portail_sondage_questions'),

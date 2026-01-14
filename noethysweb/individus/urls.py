@@ -166,6 +166,7 @@ urlpatterns = [
     path('individus/sondages/detail', sondages_reponses.Detail.as_view(), name='sondages_reponses_detail'),
     path('individus/sondages/detail/<int:idsondage>', sondages_reponses.Detail.as_view(), name='sondages_reponses_detail'),
     path('individus/sondages/detail/<int:idsondage>/<int:index>', sondages_reponses.Detail.as_view(), name='sondages_reponses_detail'),
+    path('individus/sondages/relance/', secure_ajax(sondages_reponses.traiter_relance), name='ajax_sondages_relance'),
 
     # Impression
     path('individus/etiquettes_individus', etiquettes_individus.Liste.as_view(), name='etiquettes_individus'),

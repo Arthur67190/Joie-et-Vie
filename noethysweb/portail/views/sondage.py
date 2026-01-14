@@ -13,6 +13,45 @@ from django.db.models import Q
 from django.utils.translation import gettext as _
 from core.models import Sondage, SondagePage, SondageQuestion, SondageRepondant, SondageReponse, Rattachement, Individu
 from portail.forms.sondage import Formulaire
+from portail.utils.utils_sondages_manquants import Get_sondages_manquants
+
+
+class View_liste(CustomView, TemplateView):
+    menu_code = "portail_sondages"
+    template_name = "portail/sondages_liste.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(View_liste, self).get_context_data(**kwargs)
+        context["page_titre"] = _("Sondages manquants")
+        context["box_titre"] = _("Liste des sondages à compléter")
+        
+        # Récupérer les sondages manquants pour la famille
+        sondages_manquants = Get_sondages_manquants(famille=self.request.user.famille)
+        
+        # Organiser les sondages par type
+        sondages_famille = []
+        sondages_individu = {}
+        
+        for sondage_info in sondages_manquants:
+            if sondage_info['type'] == 'famille':
+                if sondage_info not in sondages_famille:
+                    sondages_famille.append(sondage_info)
+            else:  # type == 'individu'
+                code = sondage_info['code']
+                if code not in sondages_individu:
+                    sondages_individu[code] = {
+                        'sondage': sondage_info['sondage'],
+                        'article': sondage_info['article'],
+                        'titre': sondage_info['titre'],
+                        'code': code,
+                        'individus': []
+                    }
+                sondages_individu[code]['individus'].append(sondage_info['individu'])
+        
+        context['sondages_famille'] = sondages_famille
+        context['sondages_individu'] = list(sondages_individu.values())
+        
+        return context
 
 
 class View_questions(CustomView, TemplateView):

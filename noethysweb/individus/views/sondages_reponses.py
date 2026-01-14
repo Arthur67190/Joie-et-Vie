@@ -3,17 +3,21 @@
 #  Noethysweb, application de gestion multi-activités.
 #  Distribué sous licence GNU GPL.
 
-import json, random
+import json, random, logging, time
 from colorhash import ColorHash
 from django.db.models import Q
 from django.views.generic import TemplateView
 from django.utils.safestring import mark_safe
 from core.views.base import CustomView
-from core.models import Sondage, SondageRepondant, SondageQuestion, SondageReponse, SondagePage
+from core.models import Sondage, SondageRepondant, SondageQuestion, SondageReponse, SondagePage, Famille, Inscription, Activite, ModeleEmail, Mail, Destinataire
 from portail.forms.sondage import Formulaire
 import csv
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils.encoding import smart_str
+from django.urls import reverse_lazy
+from django.contrib import messages
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -256,3 +260,81 @@ class Detail(Base):
 
     def Get_index(self):
         return self.kwargs.get("index", 1)
+
+
+def traiter_relance(request):
+    """ Vue qui exécute une action lorsqu'on clique sur le bouton 'Relance' pour les sondages """
+    idsondage = request.POST.get('idsondage')
+    
+    if not idsondage:
+        return JsonResponse({"erreur": "Aucun formulaire sélectionné"}, status=400)
+    
+    time.sleep(1)
+
+    # Récupération du sondage
+    try:
+        sondage = Sondage.objects.get(pk=idsondage)
+    except Sondage.DoesNotExist:
+        return JsonResponse({"erreur": "Formulaire introuvable"}, status=404)
+
+    # Récupération des familles qui ont déjà répondu
+    familles_repondu = SondageRepondant.objects.filter(sondage_id=idsondage).values_list('famille_id', flat=True).distinct()
+    
+    # Récupération de toutes les familles accessibles par l'utilisateur
+    # Pour un sondage, on considère toutes les familles ayant des inscriptions dans les activités de la structure
+    if sondage.structure:
+        # Familles ayant au moins une inscription dans une activité de cette structure
+        familles_all = Famille.objects.filter(
+            inscription__activite__structure=sondage.structure
+        ).distinct()
+    else:
+        # Si pas de structure définie, on prend toutes les familles ayant des inscriptions dans les structures de l'utilisateur
+        familles_all = Famille.objects.filter(
+            inscription__activite__structure__in=request.user.structures.all()
+        ).distinct()
+    
+    # Familles à relancer = toutes les familles - celles qui ont répondu
+    familles_relance = familles_all.exclude(pk__in=familles_repondu)
+
+    if not familles_relance.exists():
+        return JsonResponse({"erreur": "Aucune famille à relancer"}, status=401)
+
+    # Création du mail
+    logger.debug("Création d'un nouveau mail...")
+    modele_email = ModeleEmail.objects.filter(categorie="rappel_reponses_manquantes", defaut=True).first()
+    mail = Mail.objects.create(
+        categorie="rappel_reponses_manquantes",
+        objet=modele_email.objet if modele_email else "Rappel - Réponse au formulaire en attente",
+        html=modele_email.html if modele_email else "",
+        adresse_exp=request.user.Get_adresse_exp_defaut(),
+        selection="NON_ENVOYE",
+        verrouillage_destinataires=True,
+        utilisateur=request.user,
+    )
+
+    # Création des destinataires
+    logger.debug("Enregistrement des destinataires...")
+    liste_anomalies = []
+    for famille in familles_relance:
+        valeurs_fusion = {
+            "{NOM_FAMILLE}": famille.nom,
+            "{SONDAGE_TITRE}": sondage.titre,
+        }
+        if famille.mail:
+            destinataire = Destinataire.objects.create(
+                categorie="famille", 
+                famille=famille, 
+                adresse=famille.mail, 
+                valeurs=json.dumps(valeurs_fusion)
+            )
+            mail.destinataires.add(destinataire)
+        else:
+            liste_anomalies.append(famille.nom)
+
+    if liste_anomalies:
+        messages.add_message(request, messages.ERROR, "Adresses mail manquantes : %s" % ", ".join(liste_anomalies))
+
+    # Création de l'URL pour ouvrir l'éditeur d'emails
+    logger.debug("Redirection vers l'éditeur d'emails...")
+    url = reverse_lazy("editeur_emails", kwargs={'pk': mail.pk})
+    return JsonResponse({"url": url})
