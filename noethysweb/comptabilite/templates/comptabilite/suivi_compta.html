@@ -141,6 +141,46 @@
                 </div>
             </div>
 
+            <!-- Card Règlements Encaissement -->
+            <div class="card card-default mt-3">
+                <div class="card-header with-border">
+                    <h3 class="card-title"><i class="fa fa-file-text-o margin-r-5"></i> Détail des règlements encaissés par l'organisateur</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Réduire">
+                            <i class="fa fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if liste_reglements_encaissement %}
+                        {% for bloc in liste_reglements_encaissement %}
+                            <p><strong>{{ bloc.mode }} : {{ bloc.total|floatformat:2 }} €</strong></p>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Famille</th>
+                                        <th>Montant</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reg in bloc.reglements %}
+                                    <tr>
+                                        <td>{{ reg.date }}</td>
+                                        <td>{{ reg.famille }}</td>
+                                        <td>{{ reg.montant|floatformat:2 }} €</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endfor %}
+                    {% else %}
+                        <p>Aucun élément à afficher</p>
+                    {% endif %}
+                </div>
+            </div>
+
+
         </div>
     </div>
 

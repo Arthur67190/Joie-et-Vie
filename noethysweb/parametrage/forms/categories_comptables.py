@@ -39,6 +39,7 @@ class Formulaire(FormulaireBase, ModelForm):
                 Field("type"),
                 Field("nom"),
                 Field('bilan'),
+                Field('orga'),
                 #Field("abrege"),
                 #Field("compte_comptable"),
             ),

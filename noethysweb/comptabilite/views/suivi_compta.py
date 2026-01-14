@@ -8,7 +8,7 @@ from collections import Counter
 from django.views.generic import TemplateView
 from django.db.models import Q, Sum
 from core.views.base import CustomView
-from core.models import ComptaVentilation, ComptaOperationBudgetaire, ComptaCategorieBudget, ComptaCategorie, CompteBancaire, Deduction, TypeDeduction
+from core.models import ComptaVentilation, ComptaOperationBudgetaire, ComptaCategorieBudget, ComptaCategorie, CompteBancaire, Deduction, TypeDeduction, Reglement, Activite, Prestation, Famille
 from comptabilite.forms.suivi_compta import Formulaire
 from collections import defaultdict
 
@@ -32,12 +32,13 @@ class View(CustomView, TemplateView):
         if not form.is_valid():
             return self.render_to_response(self.get_context_data(form_parametres=form))
 
-        liste_lignes, soldes_hors_bilan, liste_deductions = self.Get_resultats(parametres=form.cleaned_data)
+        liste_lignes, soldes_hors_bilan, liste_deductions, liste_reglements_encaissement = self.Get_resultats(parametres=form.cleaned_data)
         context = {
             "form_parametres": form,
             "liste_lignes": json.dumps(liste_lignes),
             "soldes_hors_bilan": soldes_hors_bilan,
             "liste_deductions": liste_deductions,
+            "liste_reglements_encaissement": liste_reglements_encaissement,
         }
         return self.render_to_response(self.get_context_data(**context))
 
@@ -53,6 +54,26 @@ class View(CustomView, TemplateView):
         condition = Q(operation__compte__in=comptes) & Q(categorie__bilan=True)
         ventilations_tresorerie = Counter({ventilation["categorie"]: ventilation["total"] for ventilation in ComptaVentilation.objects.values("categorie").filter(condition).annotate(total=Sum("montant"))})
         dict_realise = {dict_categories[idcategorie]: montant for idcategorie, montant in dict(ventilations_tresorerie).items()}
+
+        # --- Nouveau : ajout d'une "catégorie" Règlements encaissement ---
+        compte = comptes.first()
+        structure = compte.structure
+        reglements_encaissement = Reglement.objects.filter(
+            mode__encaissement=True,
+            ventilation__prestation__activite__structure=structure
+        ).distinct().select_related('famille', 'mode', 'compte')
+
+        total_reglements = sum(float(r.montant or 0) for r in reglements_encaissement)
+        if total_reglements > 0:
+            class DummyCategorie:
+                pk = -1
+                nom = "Règlements encaissés par l'organisateur"
+                type = "credit"
+
+                def get_type_display(self):
+                    return "Crédit"
+
+            dict_realise[DummyCategorie()] = decimal.Decimal(total_reglements)
 
         # Création des lignes de catégories
         categories = {**dict_realise}.keys()
@@ -104,7 +125,8 @@ class View(CustomView, TemplateView):
             soldes_hors_bilan.append((cat.nom, solde, cat.type))  # <-- tuple au lieu de string
 
 
-        # --- Bloc déductions non remboursées ---
+        # --- Bloc déductions non remboursées ---######
+
         deductions = Deduction.objects.filter(
             label__structure__in=self.request.user.structures.all(),
             remb=False
@@ -151,4 +173,38 @@ class View(CustomView, TemplateView):
                 if ligne.get("id") == regroupements[type_deduction.pk]["id"]:
                     ligne["total"] = float(regroupements[type_deduction.pk]["total"])
                     break
-        return lignes, soldes_hors_bilan, liste_deductions
+
+        # --- Nouveau bloc : récupère les règlements avec encaissement=True ---
+        # --- Ajout des règlements encaissement comme catégorie spéciale ---
+        compte = comptes.first()  # récupère le premier compte du queryset
+        structure = compte.structure  # structure associée
+        reglements_encaissement = Reglement.objects.filter(
+            mode__encaissement=True,
+            ventilation__prestation__activite__structure=structure
+        ).distinct().select_related('famille', 'mode', 'compte').order_by('date')
+
+        # On les regroupe par mode
+        reglements_par_mode = defaultdict(list)
+        for reglement in reglements_encaissement:
+            reglements_par_mode[reglement.mode.label].append({
+                "id": reglement.idreglement,
+                "date": reglement.date.strftime("%d/%m/%Y") if reglement.date else "",
+                "compte": reglement.compte.nom if reglement.compte else "",
+                "famille": reglement.famille.nom if reglement.famille else "",
+                "montant": float(reglement.montant or 0),
+            })
+
+        # Pour l'envoyer au template sous forme triée par mode
+        liste_reglements_encaissement = []
+        for mode_label in sorted(reglements_par_mode.keys()):
+            liste_regs = reglements_par_mode[mode_label]
+            total = sum(r["montant"] for r in liste_regs)  # <-- ici on prend la clé "montant"
+            liste_reglements_encaissement.append({
+                "mode": mode_label,
+                "reglements": liste_regs,
+                "total": total
+            })
+
+        print(liste_reglements_encaissement)
+        # Retourne le tout avec les autres infos existantes
+        return lignes, soldes_hors_bilan, liste_deductions, liste_reglements_encaissement
