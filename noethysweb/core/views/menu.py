@@ -227,7 +227,7 @@ def GetMenuPrincipal(organisateur=None, user=None):
 
     # Informations
     menu_infos_individus = menu_individus.Add(titre="Informations")
-    menu_infos_individus.Add(code="suivi_administratif_liste", titre="Tableau de suivi administratif ", icone="file-text-o")
+    menu_infos_individus.Add(code="suivi_administratif_liste", titre="Tableau de suivi administratif", icone="file-text-o")
     menu_infos_individus.Add(code="demande_approbation_liste", titre="Gestion des demandes de vérification", icone="file-text-o")
     menu_infos_individus.Add(code="edition_renseignements", titre="Edition PDF des fiches complètes de renseignements", icone="file-text-o")
     # menu_infos_individus.Add(code="liste_regimes_caisses", titre="Liste des régimes et des caisses", icone="file-text-o")
