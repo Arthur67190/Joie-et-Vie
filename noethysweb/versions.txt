@@ -3,7 +3,7 @@ Version 1.3.5.6.9 (08/01/2026)
 - Ajout des déductions dans les recettes
 - Modif mode paiement ds reglement
 - Intégration règlement via Mvt dans bilan
--
+- Intégration tableau de suivi administratif
 
 Version 1.3.5.6.8 (08/01/2026)
 - Bug compta
