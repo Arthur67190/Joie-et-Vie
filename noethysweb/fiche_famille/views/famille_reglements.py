@@ -223,10 +223,11 @@ class ClasseCommune(Page):
             form.add_error(None, "Erreur de lecture de la ventilation.")
             return self.form_invalid(form)
 
-        # Calcul du total ventilé
-        total_ventilation = sum(Decimal(item["montant"]) for item in liste_ventilations)
+        # Calcul du total ventilé avec une valeur de départ Decimal
+        total_ventilation = sum((Decimal(item["montant"]) for item in liste_ventilations), Decimal('0'))
         montant_reglement = form.cleaned_data["montant"]
-        # Arrondir les deux montants à 2 décimales (comme des montants en euros)
+
+        # Arrondir les deux montants à 2 décimales
         total_ventilation = total_ventilation.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         montant_reglement = montant_reglement.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
