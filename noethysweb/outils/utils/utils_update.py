@@ -158,7 +158,7 @@ def Update():
     chemin_fichier = os.path.join(rep_temp, nom_fichier)
     try:
         logger.debug("Telechargement de la version %s..." % version_online_txt)
-        url_telechargement = "https://github.com/flambeaux-org/Sacadoc/archive/%s.zip" % version_online_txt
+        url_telechargement = "https://github.com/flambeaux-org/Sacadoc/archive/refs/heads/main.zip"
         urlretrieve(url_telechargement, chemin_fichier)
     except Exception as err:
         logger.debug("La nouvelle version '%s' n'a pas pu etre telechargee." % version_online_txt)
@@ -179,7 +179,7 @@ def Update():
     liste_fichiers = zfile.namelist()
 
     # Remplacement des fichiers
-    prefixe = "Sacadoc-%s/noethysweb/" % version_online_txt
+    prefixe = "Sacadoc-main/noethysweb/"
     chemin_dest = os.path.join(settings.BASE_DIR, "")
 
     logger.debug("Installation des nouveaux fichiers...")
