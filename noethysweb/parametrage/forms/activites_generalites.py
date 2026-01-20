@@ -47,7 +47,7 @@ class Formulaire(FormulaireBase, ModelForm):
     class Meta:
         model = Activite
         fields = ["pay", "nom", "abrege", "pay_org", "coords_org", "rue", "cp", "ville", "tel", "fax", "mail", "site", "logo_org", "logo", "code_produit_local", "service1", "service2",
-                  "date_debut", "date_fin", "groupes_activites", "nbre_inscrits_max", "inscriptions_multiples", "regie", "code_comptable", "code_analytique", "structure", "public", "num_decla", "image"]
+                  "date_debut", "date_fin","abrege", "groupes_activites", "nbre_inscrits_max", "inscriptions_multiples", "regie", "code_comptable", "code_analytique", "structure", "public", "num_decla", "image"]
         widgets = {
             'tel': Telephone(),
             'fax': Telephone(),
@@ -120,6 +120,7 @@ class Formulaire(FormulaireBase, ModelForm):
                 Field("nom"),
                 Field("structure"),
                 Field("public"),
+                Hidden("abrege", value="-"),
                 Field("num_decla"),
                 Field("image"),
             ),
