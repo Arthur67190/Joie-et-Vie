@@ -3,6 +3,51 @@
 #  Noethysweb, application de gestion multi-activités.
 #  Distribué sous licence GNU GPL.
 
+import logging, json, datetime
+logger = logging.getLogger(__name__)
+from django.http import JsonResponse
+from django.views.generic import TemplateView
+from django.utils.translation import gettext as _
+from core.models import Reglement, ModeleImpression, Recu
+from portail.views.base import CustomView
+
+ # Règlements
+def imprimer_recu(request):
+    """ Imprimer un reçu de règlement au format PDF """
+    idreglement = int(request.POST.get("idreglement", 0))
+    idmodele = int(request.POST.get("idmodele_impression", 0))
+
+    # Importation des options d'impression
+    modele_impression = ModeleImpression.objects.get(pk=idmodele)
+    dict_options = json.loads(modele_impression.options)
+    dict_options["modele"] = modele_impression.modele_document
+
+    # Importation du règlement
+    reglement = Reglement.objects.get(pk=idreglement, famille=request.user.famille)
+
+    # Création du numéro de reçu
+    numero = 1
+    dernier_recu = Recu.objects.last()
+    if dernier_recu:
+        numero = dernier_recu.numero + 1
+
+    # Création du PDF
+    donnees = {"idreglement": reglement.pk, "date_edition": datetime.date.today(), "numero": numero,
+               "idmodele": idmodele, "idfamille": reglement.famille_id, "signataire": dict_options["signataire"],
+               "intro": dict_options["intro"], "afficher_prestations": dict_options["afficher_prestations"]}
+
+    # Mémorisation du reçu
+    Recu.objects.create(numero=numero, famille_id=reglement.famille_id, date_edition=donnees["date_edition"],
+                        reglement=reglement, utilisateur=request.user)
+
+    from fiche_famille.views.reglement_recu import Generer_recu
+    resultat = Generer_recu(donnees=donnees)
+    return JsonResponse(resultat)
+
+
+
+
+
 import logging, decimal, sys, datetime, re, copy, json
 logger = logging.getLogger(__name__)
 from django.urls import reverse
@@ -59,7 +104,7 @@ class View_retour_paiement(CustomView, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(View_retour_paiement, self).get_context_data(**kwargs)
-        context['page_titre'] = _("Facturation")
+        context['page_titre'] = _("")
         context['etat'] = self.etat
         return context
 
@@ -614,11 +659,12 @@ class View(CustomView, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(View, self).get_context_data(**kwargs)
-        context['page_titre'] = "Facturation"
+        context['page_titre'] = ""
 
         # Vérifie si la famille est abonnée au prélèvement automatique
         context["prelevement_actif"] = Mandat.objects.filter(famille=self.request.user.famille, actif=True).exists()
         context['paiement_actif'] = not (context['parametres_portail']["paiement_ligne_off_si_prelevement"] and context["prelevement_actif"])
+        context['liste_reglements'] = Reglement.objects.select_related("mode", "depot").filter(famille=self.request.user.famille).order_by("-date")
 
         # Importation des paiements PAYFIP en cours
         context['liste_paiements'] = Paiement.objects.filter(famille=self.request.user.famille, systeme_paiement="payfip", resultat__isnull=True, horodatage__gt=datetime.datetime.now() - datetime.timedelta(minutes=5))

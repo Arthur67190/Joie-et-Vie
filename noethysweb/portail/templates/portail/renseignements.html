@@ -61,6 +61,20 @@
         #famille_approbations_form .form-group {
             margin-bottom: 5px;
         }
+
+        .mailbox-attachment-icon {
+            color: #666;
+            font-size: 40px;
+            max-height: 132.5px;
+            padding: 10px 10px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        @media (min-width: 576px) {
+            .card-columns {
+                column-count: 4;
+            }
+        }
     </style>
 {% endblock %}
 
@@ -174,4 +188,138 @@
         });
     </script>
 
+    <hr class="mt-2 mb-4">
+    <h3 class="mb-4">{% trans "Documents et pièces justificatives" %}</h3>
+
+
+    {# Liste des pièces à fournir #}
+    {% embed 'core/box.html' with box_titre=True %}
+        {% block box_theme %}card-outline card-lightblue{% endblock %}
+        {% block box_titre %}{% blocktrans %}Pièces à fournir{% endblocktrans %}{% endblock %}
+        {% block box_contenu %}
+            {% if pieces_fournir %}
+                <p>{% blocktrans %}Les pièces suivantes marquées d'une croix rouge sont à nous transmettre{% endblocktrans %} :</p>
+                <ul class="list-unstyled">
+                    {% for piece in pieces_fournir %}
+                        <li>{% if piece.valide %}<i class='fa fa-check fa-fw text-green'></i>{% else %}<i class='fa fa-close fa-fw text-red'></i>{% endif %} {{ piece.label }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                {% blocktrans %}Aucune pièce à fournir.{% endblocktrans %}
+            {% endif %}
+        {% endblock box_contenu %}
+    {% endembed %}
+
+    {# Transmettre des documents #}
+    {% embed 'core/box.html' with box_titre=True %}
+        {% block box_theme %}card-outline card-lightblue{% endblock %}
+        {% block box_titre %}{% blocktrans %}Transmettre un document{% endblocktrans %}{% endblock %}
+        {% block box_contenu %}
+            <p>{% blocktrans %}Cliquez sur le bouton ci-dessous pour nous transmettre un document (une pièce du dossier, un certificat, une attestation, etc...){% endblocktrans %} :</p>
+            <a type="button" class="btn btn-success" title="{% trans "Transmettre un document" %}" href="{% url 'portail_transmettre_piece' %}"><i class="fa fa-send-o margin-r-5"></i>{% blocktrans %}Transmettre un document{% endblocktrans %}</a>
+        {% endblock box_contenu %}
+    {% endembed %}
+
+    {# Liste des documents à télécharger #}
+    {% if liste_documents %}
+        {% embed 'core/box.html' with box_titre=True %}
+            {% block box_theme %}card-outline card-lightblue{% endblock %}
+            {% block box_titre %}{% blocktrans %}Documents à télécharger{% endblocktrans %}{% endblock %}
+            {% block box_contenu %}
+                <p>{% blocktrans %}Cliquez sur le nom d'un document pour le télécharger{% endblocktrans %} :</p>
+                <div class="card-columns">
+                    {% for document in liste_documents %}
+                        <div class="card mb-4" style="margin-top: 1px;">
+                            <div class="card-body pl-3 pr-3 pt-3 pb-1" style="background-color: #f4f6f9">
+                                <h5 class="card-title"><a href="{{ document.fichier.url }}" target="_blank" title="{% trans "Télécharger le document" %}">{{ document.titre }}</a></h5>
+                                <div class="card-text link-muted mt-1"><small>{{ document.texte|default:"&nbsp;" }}</small></div>
+                                <span class="mailbox-attachment-size clearfix mt-1 mb-2">
+                                    <span>{{ document.fichier.size|filesizeformat }} - {{ document.extension|upper }}</span>
+                                    <a href="{{ document.fichier.url }}" class="btn btn-default btn-sm float-right" target="_blank" title="{% trans "Télécharger le document" %}"><i class="fa fa-download"></i></a>
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endblock box_contenu %}
+        {% endembed %}
+    {% endif %}
+{# Liste des pièces fournies #}
+{% embed 'core/box.html' with box_titre=True %}
+    {% block box_theme %}card-outline card-lightblue{% endblock %}
+    {% block box_titre %}{% blocktrans %}Liste des pièces fournies{% endblocktrans %}{% endblock %}
+    {% block box_contenu %}
+        <div style="display: block;overflow-x: auto;white-space: nowrap;">
+            {% if liste_pieces %}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr class="text-center">
+                            <th>{% trans "Individu" %}</th>
+                            <th>{% trans "Type de pièce" %}</th>
+                            <th style="width: 90px;">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for piece in liste_pieces %}
+                            <tr class="text-center">
+                                <td>{{ piece.individu.prenom }}</td>
+                                <td>{{ piece.type_piece.nom|default:piece.titre }}</td>
+                                <td>
+                                    <a href="{{ MEDIA_URL }}{{ piece.document }}" class="btn btn-primary btn-xs bouton_telecharger" target="_blank" title="{% trans "Ouvrir le document" %}"><i class="fa fa-eye"></i> </a>
+                                    <a href="{% url 'portail_documents_modifier' piece.pk %}" class="btn btn-warning btn-xs" title="{% trans "Modifier le document" %}"> <i class="fa fa-pencil"></i> </a>
+                                    <form action="{% url 'supprimer_piece' pk=piece.pk %}" method="post" style="display: inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette pièce ?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-xs" title="{% trans "Supprimer le document" %}"><i class="fa fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <b>{% blocktrans %}Aucune pièce.{% endblocktrans %}</b>
+            {% endif %}
+        </div>
+    {% endblock box_contenu %}
+    {% block box_conclusion %}{{ box_conclusion|safe }}{% endblock %}
+{% endembed %}
+    <hr class="mt-2 mb-4">
+    <h3 class="mb-4">
+        {% trans "Attestations de présence" %}
+    </h3>
+
+    {# Liste des attestations #}
+    {% embed 'core/box.html' with box_titre=True %}
+        {% block box_theme %}card-outline card-lightblue{% endblock %}
+        {% block box_titre %}{% blocktrans %}Liste des attestations de présence{% endblocktrans %}{% endblock %}
+        {% block box_contenu %}
+            <div style="display: block;overflow-x: auto;white-space: nowrap;">
+                {% if liste_attestations %}
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr class="text-center">
+                                <th>{% trans "Individu" %}</th>
+                                <th>{% trans "Activité" %}</th>
+                                <th style="width: 90px;">{% trans "Actions" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attestationdoc in liste_attestations %}
+                                <tr class="text-center">
+                                    <td>{{ attestationdoc.individus.prenom }}</td>
+                                    <td>{{ attestationdoc.activites.nom }}</td>
+                                    <td>
+                                        <a href="{{ MEDIA_URL }}{{ attestationdoc.fichier }}" class="btn btn-primary btn-xs bouton_telecharger" target="_blank" title="{% trans "Télécharger le document" %}"><i class="fa fa-download"></i></a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <b>{% blocktrans %}Aucune attestation.{% endblocktrans %}</b>
+                {% endif %}
+            </div>
+        {% endblock box_contenu %}
+        {% block box_conclusion %}{{ box_conclusion|safe }}{% endblock %}
+    {% endembed %}
 {% endblock contenu_page %}

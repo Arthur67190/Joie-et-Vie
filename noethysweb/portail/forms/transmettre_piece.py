@@ -87,7 +87,7 @@ class Formulaire(FormulaireBase, ModelForm):
             Field('document4'),
             Field('observations'),
             HTML(EXTRA_SCRIPT),
-            Commandes(enregistrer_label="<i class='fa fa-send margin-r-5'></i>%s" % _("Envoyer"), annuler_url="{% url 'portail_documents' %}", ajouter=False, aide=False, css_class="pull-right"),
+            Commandes(enregistrer_label="<i class='fa fa-send margin-r-5'></i>%s" % _("Envoyer"), annuler_url="{% url 'portail_renseignements' %}", ajouter=False, aide=False, css_class="pull-right"),
         )
 
     def clean(self):

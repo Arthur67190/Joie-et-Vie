@@ -19,7 +19,7 @@ from django.contrib import messages
 
 class Page(CustomView):
     model = PortailMessage
-    menu_code = "portail_documents"
+    menu_code = "portail_renseignements"
 
     def get_context_data(self, **kwargs):
         context = super(Page, self).get_context_data(**kwargs)
@@ -29,7 +29,7 @@ class Page(CustomView):
         return context
 
     def get_success_url(self):
-        return reverse_lazy("portail_documents")
+        return reverse_lazy("portail_renseignements")
 
 
 class Ajouter(Page, crud.Ajouter):
@@ -101,4 +101,4 @@ class Modifier(Page, crud.Modifier):
         return context
 
     def get_success_url(self):
-        return reverse_lazy("portail_documents")
+        return reverse_lazy("portail_renseignements")

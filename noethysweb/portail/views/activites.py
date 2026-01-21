@@ -29,7 +29,7 @@ class View(CustomView, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(View, self).get_context_data(**kwargs)
-        context['page_titre'] = _("Activités")
+        context['page_titre'] = _("Liste des inscriptions")
 
         approbations_requises = utils_approbations.Get_approbations_requises(famille=self.request.user.famille)
         context['nbre_approbations_requises'] = approbations_requises["nbre_total"]
