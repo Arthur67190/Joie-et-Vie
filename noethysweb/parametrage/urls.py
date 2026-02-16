@@ -26,7 +26,7 @@ from parametrage.views import organisateur, structures, \
     categories_produits, produits, produits_tarifs, postes_analytiques, comptes_comptables, categories_comptables, tiers, budgets, \
     types_qualifications_collaborateurs, types_pieces_collaborateurs, types_evenements_collaborateurs, types_postes_collaborateurs, \
     modeles_plannings_collaborateurs, groupes_collaborateurs, modeles_aides, transports, compagnies, lignes, lieux, arrets, modeles_impressions, \
-    modeles_word, releves_bancaires, sondages, types_allergies, types_dispmed, types_deduction, config_paiement
+    modeles_word, releves_bancaires, sondages, types_allergies, types_dispmed, types_deduction, config_paiement, config_paiement_stripe
 
 
 urlpatterns = [
@@ -163,11 +163,17 @@ urlpatterns = [
     path('parametrage/comptes_bancaires/modifier/<int:pk>', comptes_bancaires.Modifier.as_view(), name='comptes_bancaires_modifier'),
     path('parametrage/comptes_bancaires/supprimer/<int:pk>', comptes_bancaires.Supprimer.as_view(), name='comptes_bancaires_supprimer'),
 
-    # Passerelle paiement
+    # Passerelle paiement HelloAsso
     path('parametrage/config_paiement/liste', config_paiement.Liste.as_view(), name='config_paiement_liste'),
     path('parametrage/config_paiement/ajouter', config_paiement.Ajouter.as_view(),         name='config_paiement_ajouter'),
     path('parametrage/config_paiement/modifier/<int:pk>', config_paiement.Modifier.as_view(),         name='config_paiement_modifier'),
-    path('parametrage/comptes_bancconfig_paiementaires/supprimer/<int:pk>', config_paiement.Supprimer.as_view(),         name='config_paiement_supprimer'),
+    path('parametrage/config_paiement/supprimer/<int:pk>', config_paiement.Supprimer.as_view(),         name='config_paiement_supprimer'),
+
+    # Passerelle paiement Stripe
+    path('parametrage/config_paiement_stripe/liste', config_paiement_stripe.Liste.as_view(), name='config_paiement_stripe_liste'),
+    path('parametrage/config_paiement_stripe/ajouter', config_paiement_stripe.Ajouter.as_view(), name='config_paiement_stripe_ajouter'),
+    path('parametrage/config_paiement_stripe/modifier/<int:pk>', config_paiement_stripe.Modifier.as_view(),         name='config_paiement_stripe_modifier'),
+    path('parametrage/config_paiement_stripe/supprimer/<int:pk>', config_paiement_stripe.Supprimer.as_view(),         name='config_paiement_stripe_supprimer'),
 
     # Modes de règlements
     path('parametrage/modes_reglements/liste', modes_reglements.Liste.as_view(), name='modes_reglements_liste'),

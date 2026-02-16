@@ -4,6 +4,9 @@
 #  Distribué sous licence GNU GPL.
 
 import logging
+
+from turnstile.fields import TurnstileField
+
 logger = logging.getLogger(__name__)
 from django import forms
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
@@ -18,7 +21,6 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from core.models import Utilisateur, AdresseMail
-from core.utils.utils_captcha import CaptchaField, CustomCaptchaTextInput
 from core.utils import utils_portail
 from portail.utils import utils_secquest
 
@@ -51,7 +53,7 @@ class MySetPasswordForm(SetPasswordForm):
 class MyPasswordResetForm(PasswordResetForm):
     identifiant = forms.CharField(label="Identifiant", max_length=20)
     email = forms.CharField(label="Email", max_length=254, widget=forms.EmailInput(attrs={'autocomplete': 'email'}))
-    captcha = CaptchaField(widget=CustomCaptchaTextInput)
+    turnstile = TurnstileField()
 
     def __init__(self, *args, **kwargs):
         super(MyPasswordResetForm, self).__init__(*args, **kwargs)
@@ -61,8 +63,6 @@ class MyPasswordResetForm(PasswordResetForm):
         self.fields['email'].widget.attrs['class'] = "form-control"
         self.fields['email'].widget.attrs['title'] = _("Saisissez votre adresse Email")
         self.fields['email'].widget.attrs['placeholder'] = _("Saisissez votre adresse Email")
-        self.fields['captcha'].widget.attrs['class'] = "form-control"
-        self.fields['captcha'].widget.attrs['placeholder'] = _("Recopiez le code de sécurité ci-contre")
 
     def clean(self):
         identifiant = self.cleaned_data['identifiant']

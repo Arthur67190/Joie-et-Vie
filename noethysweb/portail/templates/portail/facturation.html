@@ -50,10 +50,10 @@
                             <tr>
                                 <th>{% trans "Activité" %}</th>
                                 <th>{% trans "Intitulé" %}</th>
-                                <th>{% trans "Montant" %}</th>
+                                <th>{% trans "Montant total" %}</th>
                                 <th>{% trans "Déjà réglé" %}</th>
                                 <th>{% trans "Reste à régler" %}</th>
-                                <th>Payer</th>
+                                <th>Paiement CB</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -75,11 +75,12 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if prestation.montant_restant > 0 %}
+                                        {% if prestation.montant_restant > 0 and prestation.activite.pay_org_tpe %}
                                             <button class="btn btn-success btn-sm btn-payer"
                                                     data-idprestation="{{ prestation.idprestation }}"
-                                                    data-montant="{{ prestation.montant_restant|floatformat:2 }}">
-                                                €
+                                                    data-montant="{{ prestation.montant_restant|floatformat:2 }}"
+                                                    title="Payer par carte bancaire">
+                                                <i class="fa fa-credit-card fa-lg"></i>
                                             </button>
                                         {% endif %}
                                     </td>
@@ -621,7 +622,7 @@
                         window.open(response.url_helloasso, "_blank");
                     }
                     else if(response.systeme_paiement === "stripe"){
-                        // Placeholder pour Stripe
+                        window.open(response.url_stripe, "_blank");
                     }
                 },
                 error: function(response){

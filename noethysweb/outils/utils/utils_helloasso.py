@@ -16,9 +16,10 @@ class HelloAssoClient:
         self.client_id = client_id
         self.client_secret = client_secret
         self.organisation_slug = organisation_slug
-        self.sandbox = sandbox
+        self.sandbox = False #POUR LE DEV UNIQUEMENT !!!!!
         self.token = None
-        if sandbox:
+        dev=False #DEV
+        if dev:
             self.CHECKOUT_URL_TEMPLATE = self.CHECKOUT_URL_SANDBOX_TEMPLATE
         else:
             self.CHECKOUT_URL_TEMPLATE = self.CHECKOUT_URL_PROD_TEMPLATE
@@ -71,7 +72,7 @@ class HelloAssoClient:
             "reference": reference or "PAIEMENT_AUTO"
         }
         print("=== INIT PAYLOAD ===")
-
+        print(url)
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
         resp = requests.post(url, json=payload, headers=headers)
         resp.raise_for_status()

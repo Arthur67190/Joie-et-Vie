@@ -165,3 +165,7 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+noethysweb/ngrok.exe
+noethysweb/noethysweb/settings.py
+# Test results
+test-results/

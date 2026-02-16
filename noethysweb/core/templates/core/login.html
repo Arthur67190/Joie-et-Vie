@@ -26,16 +26,12 @@
         <div class="form-group has-feedback">
             {{ form.password }}
         </div>
+        
+        {{ form.turnstile }}
 
-        {% if form.captcha.errors %}
-            <div class="alert alert-danger">
-                Vous devez recopier le code de sécurité ci-dessous
-            </div>
+        {% if form.errors.turnstile %}
+            <p>Veuillez re-essayer le captcha</p>
         {% endif %}
-
-        <div>
-            {{ form.captcha }}
-        </div>
 
         <button name="login" id="login" class="btn btn-block btn-primary login-btn mb-4" type="submit">Se connecter</button>
 

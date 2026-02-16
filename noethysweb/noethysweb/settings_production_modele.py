@@ -146,3 +146,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # Fichier de pid de gunicorn
 # à configurer si vous utilisez ce serveur et souhaitez automatiser le reload du serveur lors des mises à jour
 # GUNICORN_PIDFILE = os.path.join(BASE_DIR, "..","gunicorn.pid")
+
+# Turnstile Captcha
+TURNSTILE_SITEKEY = '<your sitekey>'
+TURNSTILE_SECRET = '<your secret key>'

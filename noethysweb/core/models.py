@@ -1509,6 +1509,25 @@ class Evenement(models.Model):
         return "Evenement ID%d" % self.idevenement
 
 
+class StripeCompte(models.Model):
+    nom = models.CharField(max_length=100, help_text="Nom du compte Stripe (ex: Section Judo)")
+    activites = models.ManyToManyField(Activite, related_name='stripe_comptes')
+    secret_key = models.CharField(max_length=255)
+    publishable_key = models.CharField(max_length=255)
+    webhook_secret = models.CharField(
+        max_length=255,
+        blank=True, null=True,
+        help_text="Clé whsec_... pour automatiser la validation des factures"
+    )
+    actif = models.BooleanField(default=True, help_text="Activer cette configuration")
+
+    class Meta:
+        verbose_name = "Configuration Stripe"
+        verbose_name_plural = "Configurations Stripe"
+
+    def __str__(self):
+        return self.nom
+
 class HelloAssoConfig(models.Model):
     client_id = models.CharField(max_length=255, help_text="Client ID HelloAsso")
     client_secret = models.CharField(max_length=255, help_text="Client Secret HelloAsso")

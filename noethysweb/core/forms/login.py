@@ -5,11 +5,11 @@
 
 from django.contrib.auth.forms import AuthenticationForm
 from django.forms import ValidationError
-from core.utils.utils_captcha import CaptchaField, CustomCaptchaTextInput
+from turnstile.fields import TurnstileField
 
 
 class FormLoginUtilisateur(AuthenticationForm):
-    captcha = CaptchaField(widget=CustomCaptchaTextInput)
+    turnstile = TurnstileField()
 
     def __init__(self, *args, **kwargs):
         super(FormLoginUtilisateur, self).__init__(*args, **kwargs)
@@ -17,5 +17,3 @@ class FormLoginUtilisateur(AuthenticationForm):
         self.fields['username'].widget.attrs['placeholder'] = "Utilisateur"
         self.fields['password'].widget.attrs['class'] = "form-control"
         self.fields['password'].widget.attrs['placeholder'] = "Mot de passe"
-        self.fields['captcha'].widget.attrs['class'] = "form-control"
-        self.fields['captcha'].widget.attrs['placeholder'] = "Recopiez le code de sécurité ci-contre"

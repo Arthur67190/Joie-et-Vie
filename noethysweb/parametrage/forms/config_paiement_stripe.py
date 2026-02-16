@@ -11,44 +11,70 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, ButtonHolder, Submit, HTML, Row, Column, Fieldset
 from crispy_forms.bootstrap import Field, FormActions, PrependedText, StrictButton
 from core.utils.utils_commandes import Commandes
-from core.models import HelloAssoConfig, Activite
+from core.models import HelloAssoConfig, Activite, StripeCompte
 from core.forms.select2 import Select2Widget, Select2MultipleWidget
 from core.widgets import DateRangePickerWidget, SelectionActivitesWidget
 from django.core.exceptions import ValidationError
 
+# -*- coding: utf-8 -*-
+#  Copyright (c) 2019-2021 Ivan LUCAS.
+#  Noethysweb, application de gestion multi-activités.
+#  Distribué sous licence GNU GPL.
+
+from django import forms
+from django.forms import ModelForm
+from core.forms.base import FormulaireBase
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Fieldset, Field, HTML
+from core.utils.utils_commandes import Commandes
+from core.models import Activite, StripeCompte
+from core.forms.select2 import Select2MultipleWidget
+from django.core.exceptions import ValidationError
+
 
 class Formulaire(FormulaireBase, ModelForm):
-
     class Meta:
-        model = HelloAssoConfig
-        fields = ["client_id", "client_secret", "org_slug", "actif", "activites"]
+        model = StripeCompte
+        # On utilise directement les champs du modèle StripeCompte
+        fields = ["nom", "secret_key", "publishable_key", "webhook_secret", "actif", "activites"]
         widgets = {
             "activites": Select2MultipleWidget(),
         }
 
     def __init__(self, *args, **kwargs):
+        # On pop l'idconfig passé par la vue CRUD de Noethys
         self.idconfig = kwargs.pop("idconfig", None)
         super(Formulaire, self).__init__(*args, **kwargs)
+
         self.helper = FormHelper()
-        self.helper.form_id = 'config_paiement_form'
+        self.helper.form_id = 'config_stripe_form'
         self.helper.form_method = 'post'
         self.helper.form_class = 'form-horizontal'
-        self.helper.label_class = 'col-md-2'
-        self.helper.field_class = 'col-md-10'
+        self.helper.label_class = 'col-md-3'
+        self.helper.field_class = 'col-md-9'
 
-        user_structures = self.request.user.structures.all()
-        self.fields["activites"].queryset = Activite.objects.filter(structure__in=self.request.user.structures.all(), visible=True)
+        # Filtrage des activités selon les structures de l'utilisateur
+        self.fields["activites"].queryset = Activite.objects.filter(
+            structure__in=self.request.user.structures.all(),
+            visible=True
+        )
 
-        # Affichage
+        # Layout simplifié uniquement pour Stripe
         self.helper.layout = Layout(
-            Commandes(annuler_url="{% url 'config_paiement_liste' %}"),
-            Fieldset("Passerelle HelloAsso",
-                Field('client_id'),
-                Field('client_secret'),
-                     Field('org_slug'),
+            Commandes(annuler_url="{% url 'config_paiement_stripe_liste' %}"),
+
+            Fieldset("Configuration du compte Stripe",
+                     Field('nom', placeholder="Ex: Compte Section Basket"),
                      Field('actif'),
                      Field('activites'),
+                     HTML(
+                         "<p class='help-block small'>Sélectionnez les activités qui utiliseront ce compte Stripe.</p>"),
+                     ),
 
+            Fieldset("Clés API (Dashboard Stripe)",
+                     Field('secret_key', placeholder="sk_live_..."),
+                     Field('publishable_key', placeholder="pk_live_..."),
+                     Field('webhook_secret', placeholder="whsec_..."),
                      ),
         )
 

@@ -280,14 +280,6 @@ msgstr "Insurance company"
 msgid "N° de contrat"
 msgstr "Contract no."
 
-#: .\core\templates\core\captcha.html:18
-msgid "Play CAPTCHA as audio file"
-msgstr "Play CAPTCHA as audio file"
-
-#: .\core\templates\core\widgets\datepicker.html:163
-msgid "Sélectionner une date"
-msgstr "Select a date"
-
 #: .\core\utils\utils_commandes.py:11 .\core\utils\utils_commandes.py:23
 #: .\portail\forms\fiche.py:90 .\portail\forms\individu_questionnaire.py:66
 #: .\portail\templates\portail\planning_commandes.html:5

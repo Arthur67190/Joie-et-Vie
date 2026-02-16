@@ -1,9 +1,9 @@
 from core.data import data_civilites
 from core.models import Utilisateur
-from core.utils.utils_captcha import CaptchaField, CustomCaptchaTextInput
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
 from django.utils.translation import gettext_lazy as _
+from turnstile.fields import TurnstileField
 
 
 class InscriptionFamilleForm(SetPasswordForm):
@@ -13,9 +13,8 @@ class InscriptionFamilleForm(SetPasswordForm):
     nom = forms.CharField(label=_("Nom"), max_length=200)
     prenom = forms.CharField(label=_("Prénom"), max_length=200)
     mail = forms.EmailField(label=_("Email personnel"), max_length=300)
-    captcha = CaptchaField(
-        label=_("Recopiez le code de sécurité ci-contre"), widget=CustomCaptchaTextInput
-    )
+    turnstile = TurnstileField()
+
 
     def __init__(self, *args, **kwargs):
         # First None arg is for user

@@ -54,6 +54,8 @@ class Formulaire(FormulaireBase, ModelForm):
         # Date
         if not self.instance.pk:
             self.fields["date"].initial = datetime.date.today()
+            # Montant vide par défaut pour les nouveaux virements
+            self.fields["montant"].initial = None
 
         # Affichage
         self.helper.layout = Layout(

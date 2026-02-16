@@ -14,8 +14,8 @@
                 {% block box_introduction %}{{ box_introduction|safe }}{% endblock %}
                 {% block box_contenu %}
                     <div class="custom-control custom-checkbox custom-control-inline">
-                        <input type="checkbox" class="custom-control-input" id="id_check_attente" {% if afficher_renseignements_attente %}checked{% endif %}>
-                        <label class="custom-control-label" for="id_check_attente">Afficher les activités archivées</label>
+                        <input type="checkbox" class="custom-control-input" id="id_check_activites_archivees" {% if afficher_activites_archivees %}checked{% endif %}>
+                        <label class="custom-control-label" for="id_check_activites_archivees">Afficher les activités archivées</label>
                     </div>
                     <div class="mt-3"> <!-- Utilisation d'une marge top pour espacer le contenu -->
                     {% embed 'core/crud/liste.html' %}
@@ -32,14 +32,14 @@
     <script>
 
         $(document).ready(function() {
-            $("#id_check_attente").on('change', function () {
+            $("#id_check_activites_archivees").on('change', function () {
                 var etat = $(this)[0].checked;
                 $.ajax({
                     type: "POST",
                     url: "{% url 'ajax_memorise_parametre' %}",
                     data: {
-                        nom: "afficher_renseignements_attente",
-                        categorie: "renseignements_attente",
+                        nom: "afficher_activites_archivees",
+                        categorie: "activites_archivees",
                         valeur: etat,
                         csrfmiddlewaretoken: "{{ csrf_token }}",
                     },

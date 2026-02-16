@@ -1,280 +1,281 @@
 # -*- coding: utf-8 -*-
-#  Copyright (c) 2019-2021 Ivan LUCAS.
-#  Noethysweb, application de gestion multi-activités.
-#  Distribué sous licence GNU GPL.
 
 import datetime
+import json
 from django import forms
-from django.forms import ModelForm, CheckboxSelectMultiple, ModelMultipleChoiceField, HiddenInput
+from django.forms import ModelForm
 from django.db.models import Q
 from django.core.validators import FileExtensionValidator
 from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Hidden, HTML, Div, Field
-from crispy_forms.bootstrap import Field
-from core.models import Activite, Rattachement, Groupe, PortailRenseignement, CategorieTarif, NomTarif, Tarif, Structure, TarifLigne, PortailDocument
+from core.models import (Activite, Rattachement, Groupe, PortailRenseignement,
+                         NomTarif, Tarif, Structure, TarifLigne,PortailDocument)
 from core.utils.utils_commandes import Commandes
 from portail.forms.fiche import FormulaireBase
 from individus.utils import utils_pieces_manquantes
 
 
 class Formulaire_extra(FormulaireBase, forms.Form):
-    groupe = forms.ModelChoiceField(label=_("Groupe"), queryset=Groupe.objects.all(), required=True, help_text=_("Sélectionnez le groupe correspondant à l'individu dans la liste."))
-    image_url = forms.CharField(widget=HiddenInput(), required=False)
+    """ Formulaire dynamique pour les tarifs et pièces jointes """
 
     def __init__(self, *args, **kwargs):
-        structure = kwargs.pop("structure", None)
         activite = kwargs.pop("activite", None)
         famille = kwargs.pop("famille", None)
         individu = kwargs.pop("individu", None)
-        super(Formulaire_extra, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
+
         self.helper = FormHelper()
-        self.helper.form_id = 'portail_inscrire_activite_extra_form'
-        self.helper.form_method = 'post'
-        self.helper.attrs = {'enctype': 'multipart/form-data'}
-        self.helper.form_class = 'form-horizontal'
-        self.helper.label_class = 'col-md-2 col-form-label'
-        self.helper.field_class = 'col-md-10'
-        self.helper.use_custom_control = False
         self.helper.form_tag = False
+        self.helper.label_class = 'col-md-3'
+        self.helper.field_class = 'col-md-9'
 
-        # Initialisation de self.helper.layout avec un Layout vide
-        self.helper.layout = Layout()
+        layout_elements = []
 
-        # Pour chaque tarif, ajoute un champ avec une case à cocher
-        liste_nom_tarif = NomTarif.objects.filter(activite=activite, visible=True).order_by("nom").distinct()
-        for nom_tarif in liste_nom_tarif:
-            tarifs = Tarif.objects.filter(nom_tarif=nom_tarif, activite=activite, visible=True)
+        # 1. Image de l'activité
+        if activite and activite.image:
+            layout_elements.append(HTML(
+                f'<div class="text-center my-3">'
+                f'<img src="{activite.image.url}" class="img-fluid rounded shadow-sm" style="max-height: 400px;">'
+                f'</div>'
+            ))
 
-            # Vérifie si des tarifs sont associés au nom_tarif
-            if tarifs.exists():
-                field_name = f"tarifs_{nom_tarif.idnom_tarif}"
-                self.fields[field_name] = forms.ModelChoiceField(
-                    label=nom_tarif.nom,
-                    queryset=tarifs,
-                    widget=forms.RadioSelect(),
-                    required=False
-                )
-                # Modification du widget pour afficher le label avec description + montant_unique
-                tarif_choices = []
-                for tarif in tarifs:
-                    tarif_lignes = TarifLigne.objects.filter(tarif=tarif)
-                    montant_unique = tarif_lignes.first().montant_unique if tarif_lignes.exists() else 0
-                    montant_formate = f"{montant_unique:,.2f}".replace(',', ' ').replace('.',
-                                                                                         ',')  # Formater avec espace comme séparateur
-                    tarif_choices.append((tarif.pk, f"{tarif.description} - {montant_formate}\u00A0€"))
+        # 2. Tarifs (Radio boutons)
+        if activite:
+            noms_tarifs = NomTarif.objects.filter(activite=activite, visible=True).order_by("nom")
+            if noms_tarifs.exists():
+                # Ajout du titre pour la section Tarifs
+                layout_elements.append(HTML("""
+                                <div class='alert alert-warning mb-4 shadow-sm border-0'>
+                                    <div class='d-flex align-items-center'>
+                                        <i class='fa fa-euro fa-2x mr-3 text-info'></i>
+                                        <div>
+                                            <h5 class='mb-0 text-bold'>Choix des tarifs</h5>
+                                            <p class='mb-0 small text-muted'>Veuillez sélectionner le tarif correspondant à votre situation.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            """))
+            for nt in noms_tarifs:
+                tarifs = Tarif.objects.filter(nom_tarif=nt, activite=activite, visible=True)
+                if tarifs.exists():
+                    f_name = f"tarifs_{nt.idnom_tarif}"
+                    choices = []
+                    for t in tarifs:
+                        ligne = TarifLigne.objects.filter(tarif=t).first()
+                        montant = f"{ligne.montant_unique:,.2f} €".replace('.', ',') if ligne else "0,00 €"
+                        choices.append((t.pk, f"{t.description} ({montant})"))
 
-                self.fields[field_name].widget.choices = tarif_choices
-            else:
-                continue
+                    self.fields[f_name] = forms.ModelChoiceField(
+                        label=f"<strong>{nt.nom}</strong>",
+                        queryset=tarifs,
+                        widget=forms.RadioSelect(),
+                        required=False  # Optionnel pour pouvoir décocher
+                    )
+                    self.fields[f_name].choices = choices
+                    layout_elements.append(Field(f_name))
 
-        liste_groupes = Groupe.objects.filter(activite=activite).order_by("nom")
-        self.fields["groupe"].queryset = liste_groupes
-        if len(liste_groupes) == 1:
-            self.fields["groupe"].initial = liste_groupes.first()
+            if activite and famille and individu:  # Sécurité pour éviter le TypeError
+                if activite.portail_inscriptions_imposer_pieces:
+                    pieces_necessaires = utils_pieces_manquantes.Get_liste_pieces_necessaires(
+                        activite=activite,
+                        famille=famille,
+                        individu=individu
+                    )
 
-        # Mise à jour de l'URL de l'image
-        image_url = activite.image.url if activite and activite.image else None
-        if image_url:
-            self.helper.layout.append(
-                HTML(
-                    f'<div id="image-container" style="text-align: center; margin-bottom: 20px;">'
-                    f'<img src="{image_url}" alt="Image de l\'activité" style="max-width: 100%; height: auto; width: auto; max-height: 600px; border: 2px solid #ddd; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);">'
-                    f'</div>'
-                )
-            )
+                    pieces_pas_valides = [piece for piece in pieces_necessaires if not piece["valide"]]
+                    if pieces_pas_valides:
+                        layout_elements.append(HTML("""
+                            <div class='alert alert-warning mb-4 shadow-sm border-0'>
+                                <div class='d-flex align-items-center'>
+                                    <i class='fa fa-file fa-2x mr-3 text-info'></i>
+                                    <div>
+                                        <h5 class='mb-0 text-bold'>Pièces justificatives manquantes</h5>
+                                        <p class='mb-0 small text-muted'>Veuillez joindre les documents requis pour finaliser votre inscription.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        """))
+                    if not pieces_necessaires:
+                        layout_elements.append(
+                            HTML("<p class='alert alert-info'>Aucune pièce justificative n'est requise.</p>"))
+                    elif not pieces_pas_valides:
+                        layout_elements.append(
+                            HTML("<p class='alert alert-success'>Toutes les pièces sont déjà validées.</p>"))
+                    else:
+                        for piece_necessaire in pieces_necessaires:
+                            if not piece_necessaire["valide"]:
+                                nom_field = f"document_{piece_necessaire['type_piece'].pk}"
 
-        # Ajout des autres champs
-        self.helper.layout.append(Field("groupe"))
-        self.helper.layout.extend([
-            Field(f"tarifs_{nom_tarif.idnom_tarif}")
-            for nom_tarif in liste_nom_tarif
-        ])
+                                # --- Préparation du texte d'aide avec icône de téléchargement ---
+                                help_text = ""
+                                modele_url = None
 
-        # Ajout des pièces à fournir si nécessaire
-        if activite.portail_inscriptions_imposer_pieces:
-            pieces_necessaires = utils_pieces_manquantes.Get_liste_pieces_necessaires(activite=activite,
-                                                                                      famille=famille,
-                                                                                      individu=individu)
+                                portail_document = PortailDocument.objects.filter(activites=activite,
+                                                                                  type_piece=piece_necessaire[
+                                                                                      "type_piece"]).first()
+                                if portail_document:
+                                    modele_url = portail_document.document.url
+                                elif piece_necessaire["document"]:
+                                    modele_url = piece_necessaire["document"].document.url
 
-            # Vérifiez si toutes les pièces sont valides
-            pieces_pas_valides = [piece for piece in pieces_necessaires if not piece["valide"]]
+                                if modele_url:
+                                    help_text = f"""<div class='mt-2'><a href='{modele_url}' target='_blank' class='btn btn-xs btn-outline-info'>
+                                                        <i class='fa fa-download mr-1'></i> Télécharger le modèle à compléter</a></div>"""
 
-            print(pieces_pas_valides)
+                                self.fields[nom_field] = forms.FileField(
+                                    label=piece_necessaire["type_piece"].nom,
+                                    help_text=help_text,
+                                    required=True,
+                                    widget=forms.FileInput(attrs={'class': 'form-control-file'}),  # Widget plus propre
+                                    validators=[FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg'])]
+                                )
 
-            if not pieces_necessaires:
-                self.helper.layout.append(HTML("<p>Aucune pièce justificative n'est requise pour cette activité.</p>"))
-            elif not pieces_pas_valides:
-                self.helper.layout.append(
-                    HTML("<p>Toutes les pièces justificatives sont déjà fournies et validées.</p>"))
-            else:
-                for piece_necessaire in pieces_necessaires:
-                    if not piece_necessaire["valide"]:
-                        nom_field = f"document_{piece_necessaire['type_piece'].pk}"
-                        help_text = """Vous devez joindre ce document au format pdf, jpg ou png. """
+                                # Encapsulation dans une Div stylisée
+                                layout_elements.append(Div(
+                                    Field(nom_field),
+                                    css_class="document-upload-box p-3 mb-3 border rounded bg-light"
+                                ))
 
-                        portail_document = PortailDocument.objects.filter(activites=activite, type_piece=piece_necessaire["type_piece"]).first()
-
-                        if portail_document:
-                            url_document_a_telecharger = portail_document.document.url
-                            help_text += f"""Vous pouvez télécharger le document modèle de la structure à compléter en cliquant sur le lien suivant : 
-                                                         <a href='{url_document_a_telecharger}' target="_blank" title="Télécharger le document">
-                                                         <i class="fa fa-download margin-r-5"></i>Télécharger le document</a>."""
-                        elif piece_necessaire["document"]:
-                            url_document_a_telecharger = piece_necessaire["document"].document.url
-                            help_text += f"""Vous pouvez télécharger le document modèle standard à compléter en cliquant sur le lien suivant : 
-                                                         <a href='{url_document_a_telecharger}' target="_blank" title="Télécharger le document">
-                                                         <i class="fa fa-download margin-r-5"></i>Télécharger le document</a>."""
-
-                        self.fields[nom_field] = forms.FileField(
-                            label=piece_necessaire["type_piece"].nom,
-                            help_text=help_text,
-                            required=True,
-                            validators=[FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg'])]
-                        )
-                        self.helper.layout.append(Field(nom_field))
+        self.helper.layout = Layout(*layout_elements)
 
 
 class Formulaire(FormulaireBase, ModelForm):
-    activite = forms.ModelChoiceField(label=_("Activité"), queryset=Activite.objects.none(), required=True, help_text=_("Sélectionnez l'activité souhaitée dans la liste."))
-    structure = forms.ModelChoiceField(label=_("Structures"), queryset=Structure.objects.none(), required=True, help_text=_("Sélectionnez la structure souhaitée dans la liste."))
+    # On utilise des QuerySets larges pour que Django accepte la validation des IDs envoyés en AJAX
+    activite = forms.ModelChoiceField(label=_("Activité"), queryset=Activite.objects.all(), required=True)
+    structure = forms.ModelChoiceField(label=_("Structures"), queryset=Structure.objects.all(), required=True)
+    groupe = forms.ModelChoiceField(label=_("Groupe"), queryset=Groupe.objects.all(), required=True)
 
     class Meta:
         model = PortailRenseignement
-        fields = "__all__"
-        labels = {
-            "individu": _("Individu"),
-        }
-        help_texts = {
-            "individu": _("Sélectionnez le membre de la famille à inscrire."),
-        }
+        # On liste explicitement les champs pour s'assurer qu'ils sont traités
+        fields = ["individu", "famille", "structure", "activite", "groupe", "etat", "categorie", "code"]
 
     def __init__(self, *args, **kwargs):
         super(Formulaire, self).__init__(*args, **kwargs)
+
+        # Initialisation des valeurs par défaut pour les champs cachés
+        if self.request:
+            self.fields["famille"].initial = self.request.user.famille.pk
+        self.fields["etat"].initial = "ATTENTE"
+        self.fields["categorie"].initial = "activites"
+        self.fields["code"].initial = "inscrire_activite"
+
         self.helper = FormHelper()
         self.helper.form_id = 'portail_inscrire_activite_form'
         self.helper.form_method = 'post'
-
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-md-2 col-form-label'
         self.helper.field_class = 'col-md-10'
-        self.helper.use_custom_control = False
-        self.helper.attrs = {'enctype': 'multipart/form-data'}
+        self.helper.attrs = {'enctype': 'multipart/form-data', 'novalidate': ''}  # novalidate aide pour le focusable
 
-        # Individu (avec filtrage de la catégorie 2)
+        # Filtrage des individus de la famille
         rattachements = Rattachement.objects.select_related("individu").filter(
-            famille=self.request.user.famille).exclude(individu__in=self.request.user.famille.individus_masques.all()).order_by("categorie")
+            famille=self.request.user.famille).exclude(
+            individu__in=self.request.user.famille.individus_masques.all()).order_by("categorie")
+        self.fields["individu"].choices = [(r.individu_id, r.individu.Get_nom()) for r in rattachements]
 
-        self.fields["individu"].choices = [(rattachement.individu_id, rattachement.individu.Get_nom()) for rattachement
-                                           in rattachements]
-        self.fields["individu"].required = True
-
-        # Activité
-        conditions = (Q(visible=True) & Q(portail_inscriptions_affichage="TOUJOURS") | (Q(portail_inscriptions_affichage="PERIODE") & Q(
-            portail_inscriptions_date_debut__lte=datetime.datetime.now()) & Q(
-            portail_inscriptions_date_fin__gte=datetime.datetime.now())))
+        # On réduit le QuerySet d'affichage pour l'activité (mais Django garde .all() pour valider)
+        conditions = (Q(visible=True) & Q(portail_inscriptions_affichage="TOUJOURS") |
+                      (Q(portail_inscriptions_affichage="PERIODE") &
+                       Q(portail_inscriptions_date_debut__lte=datetime.datetime.now()) &
+                       Q(portail_inscriptions_date_fin__gte=datetime.datetime.now())))
         self.fields["activite"].queryset = Activite.objects.filter(conditions).order_by("nom")
 
-        conditions = (Q(visible=True))
-        self.fields["structure"].queryset = Structure.objects.filter(conditions).order_by("nom")
-
-        # Affichage
         self.helper.layout = Layout(
-            Hidden("famille", value=self.request.user.famille.pk),
-            Hidden("etat", value="ATTENTE"),
-            Hidden("categorie", value="activites"),
-            Hidden("code", value="inscrire_activite"),
+            Hidden("famille", self.fields["famille"].initial),
+            Hidden("etat", self.fields["etat"].initial),
+            Hidden("categorie", self.fields["categorie"].initial),
+            Hidden("code", self.fields["code"].initial),
             Field("individu"),
             Field("structure"),
             Field("activite"),
+            Field("groupe"),
             Div(id="form_extra"),
             HTML(EXTRA_SCRIPT),
             Commandes(
-                enregistrer_label="<i class='fa fa-send margin-r-5'></i>%s" % _("Envoyer la demande d'inscription"),
+                enregistrer_label="<i class='fa fa-send mr-2'></i>Envoyer la demande",
                 annuler_url="{% url 'portail_activites' %}", ajouter=False, aide=False, css_class="pull-right"),
         )
 
 
 EXTRA_SCRIPT = """
 <script>
-    // Fonction pour mettre à jour les activités en fonction de la structure sélectionnée
-    function On_change_structure() {
-        var idstructure = $("#id_structure").val(); // Récupère l'ID de la structure sélectionnée
-        if (!idstructure) {
-            $("#id_activite").empty().append(new Option("Sélectionnez une structure pour découvrir les activités", ""));
+$(function () {
+    const $form = $("#portail_inscrire_activite_form");
+    const $structure = $("#id_structure");
+    const $activite = $("#id_activite");
+    const $groupe = $("#id_groupe");
+    const $divExtra = $("#form_extra");
+    const $placeholder = $("#placeholder_extra");
+
+    let dataActivites = []; 
+
+    // Initialisation : on vide l'activité au chargement de la page
+    $activite.empty().append(new Option("Sélectionnez d'abord une structure", ""));
+    $groupe.empty().append(new Option("---", ""));
+
+    // --- CASCADE 1 : STRUCTURE -> ACTIVITÉ ---
+    $structure.on("change", function() {
+        const structureId = $(this).val();
+
+        // On vide tout en dessous immédiatement
+        $activite.empty().append(new Option("Chargement...", ""));
+        $groupe.empty().append(new Option("---", ""));
+        $divExtra.empty();
+        $placeholder.show();
+
+        if (!structureId) {
+            $activite.empty().append(new Option("Sélectionnez une structure", ""));
             return;
         }
-        $.ajax({
-            type: "POST",
-            url: "{% url 'portail_ajax_get_activites_par_structure' %}",
-            data: {
-                'structure_id': idstructure,
-                'csrfmiddlewaretoken': "{{ csrf_token }}" // Ajoutez le token CSRF pour la sécurité
-            },
-            success: function(data) {
-                var $activiteField = $("#id_activite");
-                $activiteField.empty(); // Vide le champ des activités
 
-                if (data.activites.length === 0) {
-                    $activiteField.append(new Option("Aucune activité disponible à l'inscription", ""));
-                } else {
-                    // Ajoute les nouvelles options au champ des activités
-                    $.each(data.activites, function(index, activite) {
-                        $activiteField.append(new Option(activite.nom, activite.id));
-                    });
-                }
-                On_change_activite();
-
-            },
-            error: function() {
-                console.error("Erreur lors de la récupération des activités.");
-            }
-        });
-    }
-
-    // Fonction pour actualiser le formulaire en fonction de l'activité sélectionnée
-    function On_change_activite() {
-        var idactivite = $("#id_activite").val(); // Récupère l'ID de l'activité sélectionnée
-        $.ajax({
-            type: "POST",
-            url: "{% url 'portail_ajax_inscrire_get_form_extra' %}",
-            data: $("#portail_inscrire_activite_form").serialize(),
-        success: function (data) {
-            $("#form_extra").html(data['form_html']);
-        }
-
-        });
-    }
-
-    $(document).ready(function() {
-        // Appelle On_change_structure lors du changement de structure
-        $('#id_structure').change(On_change_structure);
-        // Appelle On_change_activite lors du changement d'activité
-        $('#id_activite').change(On_change_activite);
-
-        // Initialise les listes d'activités lors du chargement de la page
-        On_change_structure(); // Met à jour les activités en fonction de la structure initiale
-
-        // Gestion de la soumission du formulaire
-        $("#portail_inscrire_activite_form").on('submit', function (event) {
-            event.preventDefault();
-            var formData = new FormData($("#portail_inscrire_activite_form")[0]);
-            formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
-            $.ajax({
-                type: "POST",
-                url: "{% url 'portail_ajax_inscrire_valid_form' %}",
-                data: formData,
-                contentType: false,
-                processData: false,
-                datatype: "json",
-                success: function(data){
-                    window.location.href = data.url;
-                },
-                error: function(data) {
-                    toastr.error(data.responseJSON.erreur);
-                }
+        $.post("{% url 'portail_ajax_get_activites_par_structure' %}", {
+            structure_id: structureId,
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+        }).done(function(data) {
+            dataActivites = data.activites;
+            $activite.empty().append(new Option("--- Choisir une activité ---", ""));
+            $.each(dataActivites, function(_, act) {
+                // On s'assure que act.id est le nombre et act.nom le texte
+                $activite.append(new Option(act.nom, act.id));
             });
         });
     });
+
+    // --- CASCADE 2 : ACTIVITÉ -> GROUPE & FORM EXTRA ---
+    $activite.on("change", function() {
+        const activiteId = $(this).val();
+        
+        if (activiteId) {
+        // 1. ON ACTIVE LE CHAMP (on retire le "grisé")
+        $groupe.prop('disabled', false);
+        $groupe.empty();
+        
+        // 2. Remplissage des groupes
+        const selectedAct = dataActivites.find(a => String(a.id) === String(activiteId));
+        
+        if (selectedAct && selectedAct.groupes) {
+            $.each(selectedAct.groupes, function(_, g) {
+                $groupe.append(new Option(g.nom, g.idgroupe));
+            });
+        } else {
+            $groupe.append(new Option("Aucun groupe disponible", ""));
+        }
+
+        // 2. Chargement du bloc Extra (Tarifs/Pièces)
+        $placeholder.hide();
+        $divExtra.html('<div class="text-center py-3"><i class="fa fa-spinner fa-spin"></i> Chargement...</div>');
+
+        // On n'envoie l'AJAX que si on a un ID d'activité valide
+        $.post("{% url 'portail_ajax_inscrire_get_form_extra' %}", $form.serialize())
+            .done(function (data) {
+                $divExtra.html(data.form_html);
+            })
+            .fail(function () {
+                toastr.error("Erreur de chargement.");
+            });
+    });
+});
 </script>
 """

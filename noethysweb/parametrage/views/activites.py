@@ -62,30 +62,33 @@ class Liste(Page, crud.Liste):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["afficher_renseignements_attente"] = self.afficher_renseignements_attente
+        context["afficher_activites_archivees"] = self.afficher_activites_archivees
         return context
 
     def get_queryset(self):
         user_structures = self.request.user.get_structures_all()
 
-        # Récupère toutes les activités avec objects_all et les structures filtrées
-        queryset = Activite.objects_all.prefetch_related("groupes_activites").filter(
-            self.Get_filtres("Q"),
-            structure__in=user_structures
-        )
-
-        # Détermine si les renseignements d'attente doivent être affichés
-        self.afficher_renseignements_attente = utils_parametres.Get(
-            nom="afficher_renseignements_attente",
-            categorie="renseignements_attente",
+        # Détermine si les activités archivées doivent être affichées
+        self.afficher_activites_archivees = utils_parametres.Get(
+            nom="afficher_activites_archivees",
+            categorie="activites_archivees",
             utilisateur=self.request.user,
             valeur=True
         )
 
-        if self.afficher_renseignements_attente:
+        if self.afficher_activites_archivees:
+            # Si les activités archivées doivent être affichées on se base sur objects_all
             queryset = Activite.objects_all.prefetch_related("groupes_activites").filter(
-                self.Get_filtres("Q"), structure__in=user_structures
-            ).annotate(nbre_inscrits=Count("inscription"))
+                self.Get_filtres("Q"),
+                structure__in=user_structures
+            )
+        else:
+            # Sinon, n'inclut pas les activités archivées
+            queryset = Activite.objects.prefetch_related("groupes_activites").filter(
+                self.Get_filtres("Q"),
+                structure__in=user_structures
+            )
+
         return queryset
 
     class datatable_class(MyDatatable):

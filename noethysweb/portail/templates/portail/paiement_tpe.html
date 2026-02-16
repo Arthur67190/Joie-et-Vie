@@ -72,13 +72,20 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if prestation.montant_restant > 0 %}
-                                            <button class="btn btn-success btn-sm btn-payer"
-                                                    data-idprestation="{{ prestation.id }}"
-                                                    data-montant="{{ prestation.montant_restant|floatformat:2 }}">
-                                                €
-                                            </button>
-                                        {% endif %}
+                                     {% if prestation.montant_restant > 0 %}
+                                                {% if prestation.activite.pay_org_tpe == "HELLOASSO" %}
+                                                    <button class="btn btn-success btn-sm btn-payer"
+                                                            data-idprestation="{{ prestation.id }}"
+                                                            data-montant="{{ prestation.montant_restant|floatformat:2 }}">
+                                                        €
+                                                    </button>
+                                                {% elif prestation.activite.pay_org_tpe == "STRIPE" %}
+                                                    <form action="{% url 'payer_prestation' prestation.id %}" method="POST" style="display:inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-success btn-sm">€</button>
+                                                    </form>
+                                                {% endif %}
+                                     {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -520,7 +527,8 @@
                         window.open(response.url_helloasso, "_blank");
                     }
                     else if(response.systeme_paiement === "stripe"){
-                        // Placeholder pour Stripe
+                        error: function(response){
+                            alert(response.responseJSON.erreur || "Erreur lors du paiement");
                     }
                 },
                 error: function(response){

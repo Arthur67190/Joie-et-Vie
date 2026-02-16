@@ -24,7 +24,8 @@ def GetMenuPrincipal(organisateur=None, user=None):
         menu_structure.Add(code="organisateur_ajouter", titre="Organisateur", icone="file-text-o", compatible_demo=False)
     menu_structure.Add(code="structures_liste", titre="Structures", icone="file-text-o", compatible_demo=False)
     # menu_activites.Add(code="types_groupes_activites_liste", titre="Groupes d'activités", icone="file-text-o")
-    menu_structure.Add(code="config_paiement_liste", titre="Passerelles de paiement", icone="file-text-o")
+    menu_structure.Add(code="config_paiement_liste", titre="Passerelles de paiement HelloAsso", icone="file-text-o")
+    menu_structure.Add(code="config_paiement_stripe_liste", titre="Passerelles de paiement Stripe", icone="file-text-o")
 
 
     # Modèles

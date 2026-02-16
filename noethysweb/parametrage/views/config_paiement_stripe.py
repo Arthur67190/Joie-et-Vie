@@ -7,17 +7,17 @@ from django.urls import reverse_lazy, reverse
 from django.db.models import Count
 from core.views.mydatatableview import MyDatatable, columns, helpers
 from core.views import crud
-from core.models import HelloAssoConfig
-from parametrage.forms.config_paiement import Formulaire
+from core.models import StripeCompte
+from parametrage.forms.config_paiement_stripe import Formulaire
 
 
 class Page(crud.Page):
-    model = HelloAssoConfig
-    url_liste = "config_paiement_liste"
-    url_ajouter = "config_paiement_ajouter"
-    url_modifier = "config_paiement_modifier"
-    url_supprimer = "config_paiement_supprimer"
-    description_liste = "Voici ci-dessous la liste des configurations des passerelles de paiement HelloAsso."
+    model = StripeCompte
+    url_liste = "config_paiement_stripe_liste"
+    url_ajouter = "config_paiement_stripe_ajouter"
+    url_modifier = "config_paiement_stripe_modifier"
+    url_supprimer = "config_paiement_stripe_supprimer"
+    description_liste = "Voici ci-dessous la liste des configurations des passerelles de paiement Stripe."
     description_saisie = "Saisissez toutes les informations et cliquez sur le bouton Enregistrer."
     objet_singulier = "une passerelle"
     objet_pluriel = "des passerelles"
@@ -27,10 +27,10 @@ class Page(crud.Page):
 
 
 class Liste(Page, crud.Liste):
-    model = HelloAssoConfig
+    model = StripeCompte
 
     def get_queryset(self):
-        return HelloAssoConfig.objects.filter(self.Get_filtres("Q"))
+        return StripeCompte.objects.filter(self.Get_filtres("Q"))
 
     def get_context_data(self, **kwargs):
         context = super(Liste, self).get_context_data(**kwargs)
@@ -50,8 +50,8 @@ class Liste(Page, crud.Liste):
 
         class Meta:
             structure_template = MyDatatable.structure_template
-            columns = ["org_slug", "actif"]
-            ordering = ["org_slug"]
+            columns = ["nom", "actif"]
+            ordering = ["nom"]
 
 
 class Ajouter(Page, crud.Ajouter):

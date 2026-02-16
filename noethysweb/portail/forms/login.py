@@ -7,11 +7,11 @@ import datetime
 from django.contrib.auth.forms import AuthenticationForm
 from django.forms import ValidationError
 from django.utils.translation import gettext as _
-from core.utils.utils_captcha import CaptchaField, CustomCaptchaTextInput
+from turnstile.fields import TurnstileField
 
 
 class FormLoginFamille(AuthenticationForm):
-    captcha = CaptchaField(widget=CustomCaptchaTextInput)
+    turnstile = TurnstileField()
 
     def __init__(self, *args, **kwargs):
         super(FormLoginFamille, self).__init__(*args, **kwargs)
@@ -19,8 +19,6 @@ class FormLoginFamille(AuthenticationForm):
         self.fields['username'].widget.attrs['placeholder'] = _("Identifiant")
         self.fields['password'].widget.attrs['class'] = "form-control"
         self.fields['password'].widget.attrs['placeholder'] = _("Mot de passe")
-        self.fields['captcha'].widget.attrs['class'] = "form-control"
-        self.fields['captcha'].widget.attrs['placeholder'] = _("Recopiez le code de sécurité ci-contre")
 
     def confirm_login_allowed(self, user):
         if not user.is_active:

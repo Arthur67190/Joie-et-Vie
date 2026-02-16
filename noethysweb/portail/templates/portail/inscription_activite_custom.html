@@ -1,0 +1,292 @@
+{% extends "portail/box_in_page.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load embed %}
+
+{% block contenu_page %}
+{% embed 'core/box.html' %}
+    {% block box_theme %}card-outline card-primary shadow-sm{% endblock %}
+    {% block box_titre %}
+        <i class="fa fa-edit mr-2"></i>{{ page_titre|default:"Inscription à une activité" }}
+    {% endblock %}
+
+    {% block box_contenu %}
+        {% include 'core/erreurs_form.html' %}
+
+        <form id="portail_inscrire_activite_form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="info-box bg-light border shadow-sm">
+                        <span class="info-box-icon bg-info"><i class="fa fa-user"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text text-bold text-uppercase">Individu</span>
+                            {{ form.individu }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="info-box bg-light border shadow-sm">
+                        <span class="info-box-icon bg-success"><i class="fa fa-university"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text text-bold text-uppercase">Structure</span>
+                            {{ form.structure }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="info-box bg-light border shadow-sm">
+                        <span class="info-box-icon bg-warning text-white"><i class="fa fa-star"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text text-bold text-uppercase">Activité</span>
+                            {{ form.activite }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="info-box bg-light border shadow-sm">
+                        <span class="info-box-icon bg-purple text-white" style="background-color: #6f42c1 !important;"><i class="fa fa-users"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text text-bold text-uppercase">Groupe</span>
+                            {{ form.groupe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-outline card-info mt-3 shadow-none border">
+                <div class="card-header">
+                    <h3 class="card-title text-bold">
+                        <i class="fa fa-list-ul mr-2"></i>Détails de l'inscription
+                    </h3>
+                </div>
+                <div class="card-body bg-white">
+                    <div id="loading_extra" style="display:none;" class="text-center py-4">
+                        <i class="fa fa-spinner fa-spin fa-2x text-info"></i>
+                    </div>
+                    <div id="form_extra"></div>
+                    <div id="placeholder_extra" class="text-center py-5">
+                        <div class="mb-3">
+                            <span class="fa-stack fa-2x">
+                                <i class="fa fa-circle fa-stack-2x text-light"></i>
+                                <i class="fa fa-mouse-pointer fa-stack-1x text-muted"></i>
+                            </span>
+                        </div>
+                        <h5 class="text-muted">Sélection des options</h5>
+                        <p class="text-muted px-4">Sélectionnez un <strong>individu</strong>, choisissez une <strong>structure</strong>, une <strong>activité</strong> et un <strong>groupe</strong> puis sélectionnez les tarifs</p>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-between border-top pt-3">
+                <a href="{% url 'portail_activites' %}" class="btn btn-outline-secondary px-4">
+                    <i class="fa fa-arrow-left mr-1"></i> Annuler
+                </a>
+                <button type="submit" id="btn_submit" class="btn btn-success btn-lg px-5 shadow">
+                    <i class="fa fa-paper-plane mr-2"></i> Envoyer la demande
+                </button>
+            </div>
+        </form>
+
+        <style>
+            /* Amélioration visuelle des selects dans les info-boxes */
+            #id_individu, #id_structure, #id_activite, #id_groupe {
+                display: block;
+                width: 100%;
+                padding: 0.375rem 0.75rem;
+                font-size: 0.9rem;
+                line-height: 1.5;
+                color: #495057;
+                background-color: #fff;
+                border: 1px solid #ced4da;
+                border-radius: 0.25rem;
+                transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+            }
+            .info-box-content { overflow: visible !important; }
+
+            /* Style des box de documents */
+            .document-upload-box {
+                transition: all 0.3s ease;
+                border-left: 4px solid #17a2b8 !important;
+            }
+            .document-upload-box:hover {
+                background-color: #f8f9fa !important;
+                border-color: #138496 !important;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+
+            /* Customisation du label File Input */
+            .document-upload-box label {
+                font-weight: bold;
+                color: #495057;
+                display: block;
+            }
+
+            /* Texte d'aide */
+            .document-upload-box .help-block {
+                font-size: 0.85rem;
+                color: #6c757d;
+            }
+
+            /* Info-boxes du haut */
+            .info-box {
+                min-height: 70px;
+            }
+            .info-box-icon {
+                width: 50px;
+                font-size: 1.2rem;
+            }
+        </style>
+
+    {% endblock %}
+{% endembed %}
+{% endblock contenu_page %}
+
+{% block scripts %}
+{{ block.super }}
+
+<script>
+$(function () {
+    const $form = $("#portail_inscrire_activite_form");
+    const $divExtra = $("#form_extra");
+    const $placeholder = $("#placeholder_extra");
+    const $loader = $("#loading_extra");
+    const $activiteSelect = $("#id_activite");
+    const $groupeSelect = $("#id_groupe");
+
+    let dataActivites = []; // Pour stocker les groupes
+    if (!$activiteSelect.val() || $activiteSelect.val() === "") {
+            $activiteSelect.prop('disabled', true);
+            $groupeSelect.prop('disabled', true);
+    }
+    // --- 1. Changement de Structure ---
+    $("#id_structure").on("change", function() {
+        const structureId = $(this).val();
+
+        $activiteSelect.empty().append(new Option("Chargement...", "")).prop('disabled', true);
+        $groupeSelect.empty().append(new Option("---", "")).prop('disabled', true);
+
+        if (!structureId) {
+            $activiteSelect.append(new Option("Sélectionnez une structure", ""));
+            return;
+        }
+
+        $.post("{% url 'portail_ajax_get_activites_par_structure' %}", {
+            structure_id: structureId,
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+        }).done(function(data) {
+            dataActivites = data.activites;
+            $activiteSelect.empty().append(new Option("--- Choisir une activité ---", "")).prop('disabled', false);
+
+            $.each(dataActivites, function(_, item) {
+                $activiteSelect.append(new Option(item.nom, item.id));
+            });
+        });
+    });
+
+    // --- 2. Changement d'Activité ---
+    $activiteSelect.on("change", function() {
+        const activiteId = $(this).val();
+
+        if (!activiteId) {
+            $groupeSelect.empty().append(new Option("---", "")).prop('disabled', true);
+            $divExtra.empty();
+            $placeholder.show();
+            return;
+        }
+
+        // --- NOUVEAU : Remplissage du groupe ---
+        const selectedAct = dataActivites.find(a => String(a.id) === String(activiteId));
+        $groupeSelect.empty().prop('disabled', false);
+
+        if (selectedAct && selectedAct.groupes && selectedAct.groupes.length > 0) {
+            $.each(selectedAct.groupes, function(_, g) {
+                $groupeSelect.append(new Option(g.nom, g.idgroupe));
+            });
+        } else {
+            $groupeSelect.append(new Option("Aucun groupe", ""));
+        }
+
+        // Chargement du form extra
+        $placeholder.hide();
+        $loader.show();
+        $divExtra.empty();
+
+        $.post("{% url 'portail_ajax_inscrire_get_form_extra' %}", $form.serialize())
+        .done(function(data) {
+            $loader.hide();
+            $divExtra.html(data.form_html);
+        });
+    });
+
+    // --- 3. Soumission du Formulaire ---
+    $form.on('submit', function (e) {
+        e.preventDefault();
+        console.log("Tentative d'envoi du formulaire...");
+
+        // Vérification de sécurité : est-ce que les champs obligatoires sont là ?
+        if (!$("#id_individu").val() || !$("#id_structure").val() || !$("#id_activite").val() || !$("#id_groupe").val()) {
+            toastr.error("Veuillez remplir tous les champs (Individu, Structure, Activité et Groupe).");
+            return false;
+        }
+
+        const formData = new FormData(this);
+        const $btn = $("#btn_submit");
+
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin mr-2"></i> Envoi en cours...');
+
+        $.ajax({
+            url: "{% url 'portail_ajax_inscrire_valid_form' %}",
+            type: "POST",
+            data: formData,
+            cache: false,
+            contentType: false,
+            processData: false,
+            success: function(data) {
+                console.log("Succès :", data);
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    location.reload();
+                }
+            },
+            error: function(xhr) {
+                console.error("Erreur lors de l'envoi :", xhr.responseText);
+                $btn.prop('disabled', false).html('<i class="fa fa-paper-plane mr-2"></i> Envoyer la demande');
+
+                let errorMsg = "Une erreur est survenue.";
+                if (xhr.responseJSON && xhr.responseJSON.erreur) {
+                    errorMsg = xhr.responseJSON.erreur;
+                }
+                toastr.error(errorMsg);
+            }
+        });
+    });
+
+    // Initialisation
+    if($("#id_structure").val()) {
+        // Optionnel : trigger si déjà rempli au chargement
+    }
+
+    // Permettre de décocher les tarifs (RadioButtons)
+    $(document).on('click', 'input[type="radio"]', function() {
+        var $radio = $(this);
+        // Si le bouton était déjà coché avant le clic
+        if ($radio.data('waschecked') === true) {
+            $radio.prop('checked', false);
+            $radio.data('waschecked', false);
+            $radio.trigger('change'); // Notifie le reste du form
+        } else {
+            // On décoche virtuellement les autres radios du même groupe
+            $('input[name="' + $radio.attr('name') + '"]').data('waschecked', false);
+            $radio.data('waschecked', true);
+        }
+    });
+});
+</script>
+{% endblock %}
