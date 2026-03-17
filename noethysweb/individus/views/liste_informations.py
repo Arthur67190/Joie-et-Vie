@@ -34,7 +34,7 @@ class Page(crud.Page):
     url_liste = "informations_liste"
     url_modifier = "informations_modifier"
     url_supprimer = "informations_supprimer"
-    description_liste = "Voici ci-dessous la liste des informations personnelles des individus. La colonne Diffusion indique si l'information est diffusée sur le listing des informations (L), la liste des consommations (C) et la commande des repas (R). Vous pouvez cliquer directement sur L, C ou R pour activer ou désactiver la diffusion."
+    description_liste = "Voici ci-dessous la liste des informations personnelles des individus."
     description_saisie = "Saisissez toutes les informations souhaitées et cliquez sur le bouton Enregistrer."
     objet_singulier = "une information personnelle"
     objet_pluriel = "des informations personnelles"
@@ -63,13 +63,12 @@ class Liste(Page, crud.Liste):
         actions = columns.TextColumn("Actions", sources=None, processor='Get_actions_speciales')
         categorie = columns.CompoundColumn("Catégorie", sources=['categorie__nom'])
         individu = columns.CompoundColumn("Individu", sources=['individu__nom', 'individu__prenom'])
-        diffusion = columns.TextColumn("Diffusion", sources=[], processor='Get_diffusion')
         intitule = columns.TextColumn("Intitulé", processor="Get_intitule")
         description = columns.TextColumn("Description", processor="Get_description")
 
         class Meta:
             structure_template = MyDatatable.structure_template
-            columns = ["idinformation", "individu", "categorie", "intitule", "description", "diffusion"]
+            columns = ["idinformation", "individu", "categorie", "intitule", "description"]
             ordering = ["individu"]
 
         def Get_intitule(self, instance, *args, **kwargs):

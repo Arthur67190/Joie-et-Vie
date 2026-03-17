@@ -1286,6 +1286,7 @@ class Activite(models.Model):
     interne = models.BooleanField(verbose_name="Mutualisation questionnaire", default=False, help_text="Cochez cette case si vous souhaitez avoir le questionnaire habituel de Sacadoc destiné aux camps d'été")
     maitrise = models.BooleanField(verbose_name="Activité avec équipe encadrante", default=True, help_text="Cochez cette case si l'équipe encadrante doit s'inscrire à votre activité")
     actif = models.BooleanField(verbose_name="Activité active", default=True, help_text="")
+    date_traitements_visibles = models.DateTimeField(verbose_name="Date à partir de laquelle les traitements sont visibles", blank=True, null=True, help_text="Saisissez une date pour que les traitements soient visibles sur le portail à partir de cette date. Par défaut, les traitements sont visibles dès leur création.")
     objects = ActifManager()
     objects_all = models.Manager()
 
@@ -3701,7 +3702,7 @@ class Article(models.Model):
     statut = models.CharField(verbose_name="Statut", max_length=100, choices=choix_statut, default="publie", help_text="Sélectionnez Non publié pour interrompre la publication quelque soit la date de fin de publication prévue.")
     document = models.FileField(verbose_name="Document", upload_to=get_uuid_path, blank=True, null=True, help_text="Privilégiez un document au format PDF.")
     document_titre = models.CharField(verbose_name="Titre", max_length=300, default="Document", help_text="Saisissez un nom de document.")
-    structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=False, null=False)
+    structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=False, null=True)
     choix_public = [("toutes", "Toutes les familles"),
                     ("inscrits", "Les familles dont un membre est inscrit à l'une des activités suivantes"),
                    #("presents", "Les familles dont un membre est présent sur l'une des activités suivantes et sur la période suivante"),
@@ -4596,8 +4597,8 @@ class Sondage(models.Model):
     description = models.TextField(verbose_name="Description", blank=True, null=True, help_text="Ce texte sera affiché comme introduction du formulaire de saisie.")
     conclusion = models.TextField(verbose_name="Texte après validation", blank=True, null=True, help_text="Ce texte sera affiché après la validation de la réponse par la famille.")
     code = models.CharField(verbose_name="Code du formulaire", max_length=300, default=get_uuid)
-    public = models.CharField(verbose_name="Public", max_length=50, choices=[("individu", "Individu"), ("famille", "Famille")], default="famille", help_text="Indiquez si la réponse devra être unique pour la famille ou spécifique à un individu.")
-    categories_rattachements = MultiSelectField(verbose_name="Catégories de rattachement", max_length=200, choices=CATEGORIES_RATTACHEMENT, blank=True, null=True, help_text="Sélectionnez les catégories d'individus qui pourront être associés à ce formulaire.")
+    public = models.CharField(verbose_name="Public", max_length=50, choices=[("individu", "Individu"), ("famille", "Famille")], default="individu", help_text="Indiquez si la réponse devra être unique pour la famille ou spécifique à un individu.")
+    categories_rattachements = MultiSelectField(verbose_name="Catégories de rattachement", max_length=200, choices=CATEGORIES_RATTACHEMENT, blank=True,default="2", null=True, help_text="Sélectionnez les catégories d'individus qui pourront être associés à ce formulaire.")
     modifiable = models.BooleanField(verbose_name="Réponses modifiables", default=True, help_text="Cochez cette case si vous souhaitez que les familles puissent modifier leurs réponses.")
     structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=True, null=True)
 
